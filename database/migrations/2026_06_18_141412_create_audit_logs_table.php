@@ -17,6 +17,9 @@ return new class extends Migration
             $table->timestamp('wann')->useCurrent();
             $table->string('punkt_deaktiviert')->nullable();
             $table->string('status_geaendert')->nullable();
+            $table->string('action_type_local')->nullable();
+            $table->string('details')->nullable();
+            $table->unsignedBigInteger('entity_id_local')->nullable();
             $table->timestamps();
         });
     }

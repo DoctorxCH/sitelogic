@@ -20,6 +20,9 @@ export const openDB = () => {
             if (!db.objectStoreNames.contains('photo_queue')) {
                 db.createObjectStore('photo_queue', { keyPath: 'id', autoIncrement: true });
             }
+            if (!db.objectStoreNames.contains('audit_logs')) {
+                db.createObjectStore('audit_logs', { keyPath: 'id', autoIncrement: true });
+            }
         };
 
         request.onsuccess = (event) => {

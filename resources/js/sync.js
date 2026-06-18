@@ -1,5 +1,6 @@
 import { saveToDB } from './db';
 import { processPhotoQueue } from './photoQueue';
+import { processAuditQueue } from './auditLog';
 
 const syncJobs = async () => {
     try {
@@ -32,11 +33,28 @@ const syncChecklists = async () => {
     }
 };
 
+const syncChecklistItems = async () => {
+    try {
+        const response = await fetch('/api/checklist-items');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const items = await response.json();
+
+        const itemsData = Array.isArray(items) ? items : (items.data || []);
+
+        await saveToDB('checklist_items', itemsData);
+        console.log('Checklist items synced to IndexedDB');
+    } catch (error) {
+        console.error('Failed to sync checklist items:', error);
+    }
+};
+
 const handleOnline = () => {
     console.log('Connection restored. Starting sync...');
     syncJobs();
     syncChecklists();
+    syncChecklistItems();
     processPhotoQueue();
+    processAuditQueue();
 };
 
 const handleOffline = () => {
@@ -51,5 +69,6 @@ export const initSync = () => {
     if (navigator.onLine) {
         syncJobs();
         syncChecklists();
+        syncChecklistItems();
     }
 };
