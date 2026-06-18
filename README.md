@@ -1,117 +1,66 @@
-Hier ist die vollständige, bereinigte und um die getroffenen Entscheidungen ergänzte Projektdokumentation für das Repository. Die KI-Funktionen sind wie vereinbart im Ausblick platziert, und der finale Produktname **SiteLogic** ist durchgängig integriert.
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
----
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
-# Projektdokumentation: SiteLogic
+## About Laravel
 
-## 1. Projektübersicht & Zielsetzung
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-**SiteLogic** ist eine mandantenfähige Qualitätscheck-Plattform, die speziell für Unternehmen im Bereich Netzinfrastruktur, Tiefbau und Inhouse-Installationen entwickelt wird. Die Anwendung wird als Progressive Web App (PWA) bereitgestellt.
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Das System optimiert den Qualitätssicherungsprozess im Feld: Monteure dokumentieren Arbeitsschritte direkt vor Ort mittels vordefinierter Checklisten und Fotobelegen, während Bau- und Projektleiter die Qualitätsabnahme digital, ortsunabhängig und effizient auf Ebene der einzelnen Checklisten durchführen.
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-### Hauptmerkmale:
+## Learning Laravel
 
-* **Flexibles Deployment:** Cloud-Betrieb (SaaS) oder als vollständig isolierte On-Premise-Installation (Docker-basiert) auf eigenen Servern für Kunden mit strengen Datenschutzauflagen.
-* **Offline-First:** Vollständige Datenerfassung, Statusänderung und Bildzwischenspeicherung im Feld ohne aktive Internetverbindung.
-* **Granulare Relevanz-Steuerung:** Flexibles Aktivieren/Deaktivieren kompletter Checklisten oder einzelner Prüfpunkte über On/Off-Schalter je nach den realen Vor-Ort-Gegebenheiten.
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
----
+You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
 
-## 2. Zielgruppen & Rollenkonzept
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-Das System unterscheidet strikt zwischen drei Benutzerrollen mit spezifischen Rechten und Workflows:
+## Laravel Sponsors
 
-| Rolle | Kernaufgaben in der App | Erlaubte Status-Aktionen |
-| --- | --- | --- |
-| **User (Monteur / Subunternehmer)** | Datenerfassung im Feld, Foto-Upload, Behebung von Mängeln bei Rückweisung. | `open`, `in work`, `completed` |
-| **Projektleiter / Bauleiter** | Überwachung des Baufortschritts, Prüfung der Foto-Dokumentation, Freigabe oder Ablehnung von Checklisten. | Alle Statuswerte + `approved`, `rejected` |
-| **Admin** | Systemkonfiguration, Template-Design, Benutzerverwaltung, manueller Datenimport sowie manuelle Auftragserstellung. | Alle Statuswerte + manuelle Auftragserstellung |
+We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
----
+### Premium Partners
 
-## 3. Systemarchitektur & Technologie-Stack
+- **[Vehikl](https://vehikl.com/)**
+- **[Tighten Co.](https://tighten.co)**
+- **[WebReinvent](https://webreinvent.com/)**
+- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+- **[64 Robots](https://64robots.com)**
+- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
+- **[Cyber-Duck](https://cyber-duck.co.uk)**
+- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
+- **[Jump24](https://jump24.co.uk)**
+- **[Redberry](https://redberry.international/laravel/)**
+- **[Active Logic](https://activelogic.com)**
+- **[byte5](https://byte5.de)**
+- **[OP.GG](https://op.gg)**
 
-Die Architektur sichert maximale Performance im Offline-Betrieb und gewährleistet eine einfache Portierbarkeit auf On-Premise-Infrastrukturen.
+## Contributing
 
-* **Backend & Admin-Panel:** **Laravel 11+** in Kombination mit **Filament PHP**. Filament steuert das gesamte Backoffice für Administratoren und Bauleiter (Listenansichten, Filter, Bulk-Actions).
-* **Frontend (Feld-App):** **PWA (Progressive Web App)** basierend auf HTML5, CSS3 und JavaScript.
-* **Datenbank:** **PostgreSQL** (relationale Struktur mit nativer `JSONB`-Unterstützung für flexible Asset-Metadaten).
-* **Lokaler Speicher (Client):** **IndexedDB** zur persistenten Speicherung von Aufträgen, Checklisten und Strukturdaten direkt im Browser des Endgeräts.
-* **Datei- / Bildspeicher:** S3-kompatibler Objektspeicher (**AWS S3** für die Cloud-Variante / **MinIO** für On-Premise-Szenarien).
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
----
+## Code of Conduct
 
-## 4. Prozess- und Status-Logik
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-### 4.1. Lebenszyklus einer Checkliste
+## Security Vulnerabilities
 
-Jede einer Auftragskartei zugewiesene Checkliste durchläuft ein definiertes Zustandssystem:
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-$$[open] \longrightarrow [in\ work] \longrightarrow [completed] \longrightarrow [approved]$$
+## License
 
-$$\uparrow \qquad\qquad\qquad\qquad\qquad \mid$$
-
-$$\mathrel{\llcorner} \text{───────── } [rejected] \text{ ◄─────────┘}$$
-
-* **`open`:** Die Checkliste wurde generiert; die Arbeit vor Ort hat noch nicht begonnen.
-* **`in work`:** Der Monteur erfasst Daten. Die Arbeit kann jederzeit unterbrochen und lokal gespeichert werden. Die Liste verbleibt so lange im Status `in work`, bis sie aktiv vom Monteur abgeschlossen wird.
-* **`completed`:** Der Monteur hat alle aktiven Pflichtpunkte ausgefüllt. Die Editierrechte für den Monteur werden gesperrt. Die Checkliste ist bereit zur Prüfung durch den Bauleiter.
-* **`approved`:** Vom Bauleiter erfolgreich abgenommen.
-* **`rejected`:** Vom Bauleiter unter Angabe eines Pflichtkommentars abgelehnt. Die Liste geht zurück an den Monteur in den Status `in work` zur Mängelbehebung.
-* **`storno` / `error`:** Administrative Statuswerte bei Projektabbruch oder unvorhersehbaren Problemen (z. B. Rohrblockade im Tiefbau).
-
-### 4.2. Logik der Relevanz-Steuerung (On/Off-Schalter)
-
-* **Auf Checklisten-Ebene:** Komplette Kontrollblöcke (z. B. "Q-Check Tiefbau") können per Hauptschalter deaktiviert werden, wenn das Gewerk am Standort entfällt.
-* **Auf Prüfpunkt-Ebene:** Einzelne Kriterien (z. B. "Einstiegsschacht prüfen") können ausgeschaltet werden, wenn sie vor Ort nicht existieren.
-* **Berechnung Erfüllungsgrad (0–100%):** Deaktivierte Elemente (Status N/A) fließen **nicht** negativ in die Fortschrittsberechnung ein. Sie verringern die Gesamtzahl der geforderten Pflichtpunkte, sodass die 100% weiterhin erreicht werden können.
-* **Keine Gesamtabnahme:** Bauleiter nehmen Checklisten **immer einzeln** ab. Es gibt keine pauschale Freigabe des gesamten Auftrags. Eine Abnahme ist zudem erst möglich, wenn die jeweilige Checkliste den Status `completed` aufweist.
-
----
-
-## 5. Zukünftige Erweiterung: KI-Funktionen (Ausblick)
-
-*In einer späteren Projektphase wird ein asynchroner Python-KI-Dienst an das Laravel-Backend angebunden. Diese Funktionen sind für die aktuelle Umsetzung explizit ausgeklammert und dienen nur als strategischer Ausblick:*
-
-* **Automatische Bildvalidierung:** Prüfung unmittelbar nach dem Upload des Fotos im Feld (z. B. über WebSockets).
-* **Biegeradius-Erkennung:** Visuelle Analyse von Glasfaser- und Kupferkabeln auf Einhaltung der Mindestbiegeradien (z. B. 14 cm bei 72er LWL Minikabeln).
-* **OCR-Abgleich:** Automatisches Auslesen von Kabelschildern (Asset-ID), OTO-Labels (Flat-ID) und Nummern im BEP zur Validierung gegen die Soll-Daten der API.
-* **Montagekontrolle:** KI-gestützte Verifikation, ob Fasern korrekt in der Kassette abgelegt und Zugentlastungen richtig montiert sind.
-
----
-
-## 6. To-Do-Liste / Implementierungs-Roadmap für Jules
-
-Diese Liste enthält ausschließlich die Kernfunktionen für die anstehende Umsetzung (Phase 1). **KI-Features sind hier nicht enthalten.**
-
-### Sprint 1: Fundament & API-Datenstruktur
-
-* [ ] PostgreSQL-Datenbankstruktur gemäß Spezifikation aufsetzen (Tabellen für `jobs`, `job_assets`, `checklists`, `checklist_items`, `attachments`, `audit_logs`).
-* [ ] REST-API-Endpunkte in Laravel implementieren für die automatische Auftragserstellung (Import von PID, Adresse, Projekt-Typ, Bauleiter, Technologie, Asset-IDs, Flat-IDs, Kabel-/BEP-/Muffentypen).
-* [ ] Manuelle Import-Schnittstelle für Admins im Backend bereitstellen (Excel/CSV-Mapping und manuelles Formular).
-
-### Sprint 2: Admin- & Bauleiter-Dashboard (Filament PHP)
-
-* [ ] Erstellung des Backoffice-Dashboards mit Filament PHP.
-* [ ] Globale Suche implementieren (Suche nach PID und Adresse).
-* [ ] Schnellfilter „Assigned to me“ für zugewiesene Bauleiter umsetzen.
-* [ ] Listenansichten für Bauleiter erstellen (Fokus auf Checklisten im Status `completed`).
-* [ ] Massenabnahme (Bulk Freigabe) für Bauleiter in den Tabellenansichten implementieren (Aktion: Markierte Checklisten auf `approved` setzen).
-* [ ] Zentrales Kommentarfeld pro Checkliste/Kartei für Bauleiter einrichten (inkl. Pflichtfeld-Zwang bei Statuswechsel auf `rejected`).
-
-### Sprint 3: PWA Client & Offline-First Logik
-
-* [ ] Basis-PWA aufsetzen (Service Worker für App-Caching registrieren).
-* [ ] Lokale Datenbank-Infrastruktur im Browser aufbauen (`IndexedDB`).
-* [ ] Synchronisations-Mechanismus entwickeln: Erkennung des Online-Status (`navigator.onLine`) und sequenzieller Abgleich von Textdaten und Statusänderungen.
-* [ ] Datei-Upload-Warteschlange (Photo Queue) im Client implementieren: Lokale Zwischenspeicherung aufgenommener Fotos im Browser-Dateisystem und automatischer Upload in den S3/MinIO-Speicher bei stabiler Verbindung.
-
-### Sprint 4: Feld-Workflow & UI-Komponenten
-
-* [ ] UI für die Auftragskartei und die darunterliegenden Checklisten-Blöcke (QS1 / QS2) bauen.
-* [ ] On/Off-Schalter für komplette Checklisten auf der Kartei implementieren.
-* [ ] On/Off-Schalter für einzelne Prüfpunkte innerhalb einer Checkliste umsetzen (inkl. Anpassung der 0–100% Fortschritts-Berechnungslogik).
-* [ ] Foto-Erfassungskomponente mit Multi-Upload und optionalem Textfeld pro Prüfpunkt erstellen.
-* [ ] Status-Umschaltung für den Monteur umsetzen (`in work` Zwischenspeicherung und `completed` Abschluss).
-* [ ] Protokollierung aller Aktionen in der Tabelle `audit_logs` (Wer hat wann welchen Punkt deaktiviert oder Status geändert).
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
