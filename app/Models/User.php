@@ -3,14 +3,26 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
+
+    /**
+     * Bestimmt, wer auf das Filament-Panel zugreifen darf.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Erlaubt Super-Admins oder Benutzern mit der Filament-Zugriffsberechtigung den Login
+        return $this->hasRole('super_admin') || $this->hasPermissionTo('access_admin_panel');
+    }
 
     /**
      * The attributes that are mass assignable.
