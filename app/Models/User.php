@@ -20,8 +20,13 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        // Erlaubt Super-Admins oder Benutzern mit der Filament-Zugriffsberechtigung den Login
-        return $this->hasRole('super_admin') || $this->hasPermissionTo('access_admin_panel');
+        // Super-Admins dürfen immer rein
+        if ($this->hasRole('super_admin')) {
+            return true;
+        }
+
+        // Prüfen, ob die Berechtigung überhaupt existiert, bevor sie abgefragt wird
+        return $this->hasPermissionTo('access_admin_panel');
     }
 
     /**
