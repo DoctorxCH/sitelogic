@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/public/css/filament
+/public/js/filament
+/public/css/filament
+/public/js/filament
