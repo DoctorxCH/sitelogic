@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class JobController extends Controller
 {
+    public function index()
+    {
+        $jobs = Job::with('jobAssets')->get();
+        return response()->json(['data' => $jobs], 200);
+    }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
