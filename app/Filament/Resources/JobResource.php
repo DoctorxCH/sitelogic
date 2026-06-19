@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Imports\JobImporter;
 use App\Filament\Resources\JobResource\Pages;
 use App\Models\Job;
 use App\Models\JobFieldSetting;
@@ -101,6 +102,21 @@ class JobResource extends Resource
                 Tables\Columns\TextColumn::make('type')->badge(),
                 Tables\Columns\TextColumn::make('user.name')->label('Manager'),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+            ])
+            ->headerActions([
+                Tables\Actions\ImportAction::make()
+                    ->importer(JobImporter::class)
+                    ->label('Import Jobs')
+                    ->color('primary')
+                    ->icon('heroicon-o-arrow-up-tray'),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
