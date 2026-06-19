@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\JobResource\Pages;
+use App\Filament\Resources\JobResource\RelationManagers\ChecklistsRelationManager;
 use App\Models\Job;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -72,7 +73,9 @@ class JobResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ChecklistsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
