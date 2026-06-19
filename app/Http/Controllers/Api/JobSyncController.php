@@ -56,9 +56,10 @@ class JobSyncController extends Controller
         // Filter jobs by the authenticated user's name
         $user = $request->user();
         if ($user && $user->hasRole('bauleiter')) {
-            $jobs = Job::with('jobAssets')->where('bauleiter', $user->name)->get();
+            // Load Job with Checklists and their Items
+            $jobs = Job::with(['jobAssets', 'checklists.items'])->where('bauleiter', $user->name)->get();
         } else {
-             $jobs = Job::with('jobAssets')->get();
+             $jobs = Job::with(['jobAssets', 'checklists.items'])->get();
         }
         return response()->json($jobs);
     }
@@ -68,6 +69,7 @@ class JobSyncController extends Controller
      */
     public function getChecklists(Request $request)
     {
+        // We now fetch them inside getJobs with relationships, but keeping this for flat fallback if needed
         return response()->json(Checklist::all());
     }
 

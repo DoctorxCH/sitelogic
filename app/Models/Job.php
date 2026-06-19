@@ -18,4 +18,9 @@ class Job extends Model
     {
         return $this->hasMany(JobAsset::class);
     }
+
+    public function checklists()
+    {
+        return $this->hasMany(Checklist::class, 'auftragskartei_id');
+    }
 }
