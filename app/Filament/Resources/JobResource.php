@@ -16,7 +16,7 @@ class JobResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
 
-    public function form(Form $form): Form
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -43,7 +43,7 @@ class JobResource extends Resource
             ]);
     }
 
-    public function table(Table $table): Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
@@ -70,12 +70,12 @@ class JobResource extends Resource
             ]);
     }
 
-    public function getRelations(): array
+    public static function getRelations(): array
     {
         return [];
     }
 
-    public function getPages(): array
+    public static function getPages(): array
     {
         return [
             'index' => Pages\ListJobs::route('/'),
