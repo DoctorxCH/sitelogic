@@ -11,8 +11,15 @@ class FrontendJobController extends Controller
 {
     public function index()
     {
-        $jobs = Job::where('user_id', Auth::id())
-            ->whereIn('status', ['pending', 'in_progress'])
+        // Jobs die entweder frei sind oder dem Techniker gehören
+        $jobs = Job::where(function($query) {
+                $query->whereNull('technician_id')
+                      ->where('status', 'pending');
+            })
+            ->orWhere(function($query) {
+                $query->where('technician_id', Auth::id())
+                      ->whereIn('status', ['pending', 'in_progress']);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -21,8 +28,8 @@ class FrontendJobController extends Controller
 
     public function show(Job $job)
     {
-        if ($job->user_id !== Auth::id()) {
-            abort(403, 'Zugriff verweigert.');
+        if ($job->technician_id && $job->technician_id !== Auth::id()) {
+            abort(403, 'Unauthorized.');
         }
 
         $job->load('checklists.items');
@@ -30,10 +37,10 @@ class FrontendJobController extends Controller
         return view('frontend.job-detail', compact('job'));
     }
 
-    public function toggleItem(ChecklistItem$item)
+    public function toggleItem(ChecklistItem $item)
     {
-        if ($item->checklist->job->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unautorisiert'], 403);
+        if ($item->checklist->job->technician_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $item->is_checked = !$item->is_checked;
@@ -48,20 +55,29 @@ class FrontendJobController extends Controller
 
     public function updateStatus(Job $job, Request $request)
     {
-        if ($job->user_id !== Auth::id()) {
-            abort(403);
-        }
-
         $request->validate(['status' => 'required|in:in_progress,completed,aborted']);
-        
-        $job->status = $request->status;
-        if ($request->status === 'in_progress' && !$job->started_at) {
-            $job->started_at = now();
-        } elseif (in_array($request->status, ['completed', 'aborted'])) {
+
+        if ($request->status === 'in_progress') {
+            // Selbstzuweisung des Technikers beim Starten
+            if ($job->technician_id && $job->technician_id !== Auth::id()) {
+                abort(403);
+            }
+            $job->technician_id = Auth::id();
+            $job->status = 'in_progress';
+            if (!$job->started_at) {
+                $job->started_at = now();
+            }
+        } else {
+            // Absichern für Abschluss
+            if ($job->technician_id !== Auth::id()) {
+                abort(403);
+            }
+            $job->status = $request->status;
             $job->completed_at = now();
         }
+
         $job->save();
 
-        return redirect()->back()->with('success', 'Status aktualisiert.');
+        return redirect()->back()->with('success', 'Status updated.');
     }
 }

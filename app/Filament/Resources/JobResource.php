@@ -17,30 +17,55 @@ class JobResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
 
+    protected static ?string $navigationLabel = 'Jobs';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Select::make('status')
-                    ->options([
-                        'pending' => 'Ausstehend',
-                        'in_progress' => 'In Arbeit',
-                        'completed' => 'Abgeschlossen',
-                        'aborted' => 'Abgebrochen',
-                    ])
-                    ->default('pending')
-                    ->required(),
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name', fn ($query) => $query->whereHas('roles', fn ($q) => $q->where('name', 'technician')))
-                    ->label('Techniker')
-                    ->placeholder('Techniker auswählen')
-                    ->nullable(),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(65535)
-                    ->columnSpanFull(),
+                Forms\Components\Section::make('Main Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'in_progress' => 'In Progress',
+                                'completed' => 'Completed',
+                                'aborted' => 'Aborted',
+                            ])
+                            ->default('pending')
+                            ->required(),
+                        Forms\Components\Select::make('user_id')
+                            ->relationship('user', 'name', fn ($query) => $query->whereHas('roles', fn ($q) => $q->whereIn('name', ['manager', 'super_admin'])))
+                            ->label('Assigned Manager')
+                            ->placeholder('Select a manager')
+                            ->nullable()
+                            ->preload(),
+                        Forms\Components\Select::make('technician_id')
+                            ->relationship('technician', 'name')
+                            ->label('Claimed Technician')
+                            ->disabled()
+                            ->placeholder('No technician has claimed this job yet'),
+                        Forms\Components\Textarea::make('description')
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Tracking Data (Automated)')
+                    ->schema([
+                        Forms\Components\DateTimePicker::make('started_at')
+                            ->disabled(),
+                        Forms\Components\DateTimePicker::make('completed_at')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('latitude')
+                            ->numeric()
+                            ->disabled(),
+                        Forms\Components\TextInput::make('longitude')
+                            ->numeric()
+                            ->disabled(),
+                    ])->columns(2),
             ]);
     }
 
@@ -57,7 +82,8 @@ class JobResource extends Resource
                         'completed' => 'success',
                         'aborted' => 'danger',
                     }),
-                Tables\Columns\TextColumn::make('user.name')->label('Techniker'),
+                Tables\Columns\TextColumn::make('user.name')->label('Manager'),
+                Tables\Columns\TextColumn::make('technician.name')->label('Technician'),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([])

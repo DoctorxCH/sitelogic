@@ -13,8 +13,11 @@ class Job extends Model
         'description',
         'status',
         'user_id',
+        'technician_id',
         'started_at',
         'completed_at',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
@@ -24,7 +27,12 @@ class Job extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function technician(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'technician_id');
     }
 
     public function checklists(): HasMany
