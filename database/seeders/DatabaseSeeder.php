@@ -3,82 +3,87 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Job;
 use App\Models\ProjectType;
 use App\Models\ChecklistTemplate;
+use App\Models\ChecklistTemplateItem;
+use App\Models\Job;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // Define roles
-        Role::firstOrCreate(['name' => 'super_admin']);
-        Role::firstOrCreate(['name' => 'bauleiter']);
-        Role::firstOrCreate(['name' => 'monteur']);
+        // 1. Rollen erstellen (Englisch)
+        $superAdminRole = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
-            ['name' => 'Super Admin', 'password' => bcrypt('password')]
+        // 2. Benutzer anlegen und Rollen zuweisen
+        $admin = User::updateOrCreate(
+            ['email' => 'martin@sitelogic.sk'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('Ckeesjb6&M'),
+            ]
         );
-        $admin->assignRole('super_admin');
+        $admin->assignRole($superAdminRole);
 
-        $bauleiter = User::firstOrCreate(
-            ['email' => 'bauleiter@example.com'],
-            ['name' => 'Test Bauleiter', 'password' => bcrypt('password')]
+        $user = User::updateOrCreate(
+            ['email' => 'martin@365jobs.sk'],
+            [
+                'name' => 'Martin Kurka',
+                'password' => Hash::make('Ckeesjb6&M'),
+            ]
         );
-        $bauleiter->assignRole('bauleiter');
+        $user->assignRole($userRole);
 
-        // Create templates
-        $inhouseTemplate = ChecklistTemplate::firstOrCreate(['name' => 'Inhouse']);
-        if ($inhouseTemplate->items()->count() === 0) {
-            $inhouseTemplate->items()->createMany([
-                ['question' => 'OTO-Dose korrekt beschriftet und montiert?'],
-                ['question' => 'BEP (Building Entry Point) geerdet und gespleisst?'],
-                ['question' => 'Steigzone/Rohranlage auf Durchgängigkeit geprüft?'],
-                ['question' => 'Optische Dämpfungsmessung (OTDR) Protokoll hochgeladen?'],
-                ['question' => 'Installationsanzeige (IA) visiert und abgelegt?'],
+        // 3. Projekttyp anlegen
+        $projectType = ProjectType::updateOrCreate(['name' => 'FTTH']);
+
+        // 4. Templates anlegen
+        $inhouseTemplate = ChecklistTemplate::updateOrCreate(['name' => 'Inhouse']);
+        $manholeTemplate = ChecklistTemplate::updateOrCreate(['name' => 'Manhole']);
+
+        // 5. Template Items für Inhouse
+        $inhouseItems = [
+            'OTO-Dose korrekt beschriftet und montiert?',
+            'BEP (Building Entry Point) geerdet und gespleisst?',
+            'Steigzone/Rohranlage auf Durchgängigkeit geprüft?',
+            'Optische Dämpfungsmessung (OTDR) Protokoll hochgeladen?',
+            'Installationsanzeige (IA) visiert und abgelegt?'
+        ];
+
+        foreach ($inhouseItems as $item) {
+            ChecklistTemplateItem::updateOrCreate([
+                'checklist_template_id' => $inhouseTemplate->id,
+                'question' => $item
             ]);
         }
 
-        $manholeTemplate = ChecklistTemplate::firstOrCreate(['name' => 'Manhole']);
-        if ($manholeTemplate->items()->count() === 0) {
-            $manholeTemplate->items()->createMany([
-                ['question' => 'Muffe wasserdicht verschlossen und fixiert?'],
-                ['question' => 'Kabelreserve ordnungsgemäss im Schacht abgelegt?'],
-                ['question' => 'Rohrabdichtung (Gas-/Wasserdicht) installiert?'],
-                ['question' => 'Schachtreinigung durchgeführt und Protokoll erstellt?'],
-                ['question' => 'Beschriftung der Transmissionskabel im Schacht angebracht?'],
+        // 6. Template Items für Manhole
+        $manholeItems = [
+            'Muffe wasserdicht verschlossen und fixiert?',
+            'Kabelreserve ordnungsgemäss im Schacht abgelegt?',
+            'Rohrabdichtung (Gas-/Wasserdicht) installiert?',
+            'Schachtreinigung durchgeführt und Protokoll erstellt?',
+            'Beschriftung der Transmissionskabel im Schacht angebracht?'
+        ];
+
+        foreach ($manholeItems as $item) {
+            ChecklistTemplateItem::updateOrCreate([
+                'checklist_template_id' => $manholeTemplate->id,
+                'question' => $item
             ]);
         }
 
-        // Create Project Type
-        $ftthProject = ProjectType::firstOrCreate(['name' => 'FTTH']);
-
-        // Assign templates to FTTH
-        $ftthProject->checklistTemplates()->syncWithoutDetaching([
-            $inhouseTemplate->id,
-            $manholeTemplate->id
-        ]);
-
-        // Truncate jobs, checklists, checklist_items so we start fresh for jobs
-        \DB::statement('PRAGMA foreign_keys = OFF;');
-        Job::truncate();
-        \App\Models\Checklist::truncate();
-        \App\Models\ChecklistItem::truncate();
-        \DB::statement('PRAGMA foreign_keys = ON;');
-
-        // Create a Job. The JobObserver will automatically generate Checklists and Items.
+        // 7. Test-Job generieren (triggert den JobObserver)
         Job::create([
-            'pid' => 'PID-FTTH-001',
-            'adresse' => 'Musterstraße 1',
+            'pid' => '0193930209',
+            'adresse' => 'Dorfstrasse 37',
             'projekt_typ' => 'FTTH',
-            'bauleiter' => 'Test Bauleiter',
-            'technologie' => 'Tech A',
+            'bauleiter' => 'Martin Kurka',
+            'technologie' => 'FTTH'
         ]);
     }
 }
