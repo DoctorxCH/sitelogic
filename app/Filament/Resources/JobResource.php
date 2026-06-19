@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Imports\JobImporter;
 use App\Filament\Resources\JobResource\Pages;
 use App\Models\Job;
 use App\Models\JobFieldSetting;
@@ -83,7 +82,7 @@ class JobResource extends Resource
                 $fields[] = $component;
             }
         } catch (\Exception $e) {
-            // Failsafe during migrations
+            // Failsafe
         }
         return $fields;
     }
@@ -104,11 +103,59 @@ class JobResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->headerActions([
-                Tables\Actions\ImportAction::make()
-                    ->importer(JobImporter::class)
-                    ->label('Import Jobs')
+                Tables\Actions\Action::make('direct_csv_import')
+                    ->label('Direct CSV Import')
+                    ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
-                    ->icon('heroicon-o-arrow-up-tray'),
+                    ->form([
+                        Forms\Components\FileUpload::make('csv_file')
+                            ->label('Select CSV File')
+                            ->required()
+                            ->disk('local')
+                            ->directory('imports')
+                            ->visibility('private'),
+                    ])
+                    ->action(function (array $data) {
+                        $filePath = storage_path('app/' . $data['csv_file']);
+                        
+                        if (!file_exists($filePath) || ($handle = fopen($filePath, 'r')) === false) {
+                            return;
+                        }
+
+                        $headers = fgetcsv($handle, 0, ',');
+                        if (!$headers) {
+                            fclose($handle);
+                            return;
+                        }
+
+                        while (($row = fgetcsv($handle, 0, ',')) !== false) {
+                            if (count($headers) !== count($row)) {
+                                continue;
+                            }
+
+                            $rowData = array_combine($headers, $row);
+
+                            $jobData = [
+                                'title' => $rowData['title'] ?? 'Untitled Job',
+                                'status' => $rowData['status'] ?? 'pending',
+                                'type' => $rowData['type'] ?? 'ftth',
+                                'description' => $rowData['description'] ?? null,
+                                'custom_fields' => [],
+                            ];
+
+                            foreach ($rowData as $key => $value) {
+                                if (str_starts_with($key, 'custom_fields.')) {
+                                    $customKey = substr($key, 14);
+                                    $jobData['custom_fields'][$customKey] = ($value === '-' || $value === '') ? null : $value;
+                                }
+                            }
+
+                            Job::create($jobData);
+                        }
+
+                        fclose($handle);
+                        unlink($filePath);
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

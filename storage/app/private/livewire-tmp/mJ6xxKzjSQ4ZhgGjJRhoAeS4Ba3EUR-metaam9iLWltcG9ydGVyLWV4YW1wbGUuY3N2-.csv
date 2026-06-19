@@ -1,0 +1,11 @@
+﻿title,status,type,description,pid,site_name,address,business_area,region,project_type_code,technology,an_code,site_identificator,drop_cable_labels,bep_type,target_latitude,target_longitude
+FTTH Installation Ebikon,pending,ftth,Standard FTTH Abbruch,100232117,71EBI_Ebikon_Ottigenbühlstr._8_Abbruch_A,"Ottigenbühlstr. 8, 6030 Ebikon",CX-WCO,C,ABB,CU,71EBI,-,-,-,47081,8341
+FTTO Setup Luzern,pending,ftto,Business Anschluss Neu,100232118,71LUC_Luzern_Zürichstr._12_Neu_B,"Zürichstr. 12, 6004 Luzern",CX-WCO,C,NEU,LWL,71LUC,-,-,-,47056,8310
+FTTH Rain Dorf,pending,ftth,Erschliessung EFH,100232119,71RAI_Rain_Dorfstr._37_Neu_A,"Dorfstr. 37, 6026 Rain",CX-WCO,C,NEU,LWL,71RAI,1243-A,LBL-01,BEP-Indoor,47131,8258
+FTTH Eschenbach,pending,ftth,Wohnblock Ausbau,100232120,71ESC_Eschenbach_Luzernerstr._5_Ausbau_C,"Luzernerstr. 5, 6274 Eschenbach",CX-WCO,C,AUS,LWL,71ESC,-,-,BEP-Outdoor,47120,8315
+FTTO Hochdorf,pending,ftto,Industriezone Anschluss,100232121,71HOC_Hochdorf_Siedeweid_1_Neu_A,"Siedeweid 1, 6280 Hochdorf",CX-WCO,C,NEU,LWL,71HOC,9981-X,-,BEP-Rack,47165,8291
+FTTH Root D4,pending,ftth,Wohnbereich D4,100232122,71ROO_Root_Platz_4_Neu_B,"Platz 4, 6039 Root D4",CX-WCO,C,NEU,LWL,71ROO,-,-,-,47112,8388
+FTTH Rothenburg,pending,ftth,Umrüstung auf LWL,100232123,71ROT_Rothenburg_Stationsstr._10_Umbau_A,"Stationsstr. 10, 6023 Rothenburg",CX-WCO,C,UMB,LWL,71ROT,-,-,BEP-Indoor,47091,8271
+FTTO Emmenbrücke,pending,ftto,Einkaufszentrum,100232124,71EMM_Emmen_Gerliswilstr._44_Neu_A,"Gerliswilstr. 44, 6020 Emmenbrücke",CX-WCO,C,NEU,LWL,71EMM,-,-,BEP-Rack,47072,8281
+FTTH Sursee,pending,ftth,Altstadt Erschliessung,100232125,71SUR_Sursee_Rathausplatz_1_Neu_C,"Rathausplatz 1, 6210 Sursee",CX-WCO,C,NEU,LWL,71SUR,-,-,-,47174,8108
+FTTH Sempach,pending,ftth,Seeresidenz,100232126,71SEM_Sempach_Seestr._20_Neu_A,"Seestr. 20, 6204 Sempach",CX-WCO,C,NEU,LWL,71SEM,-,-,BEP-Outdoor,47135,8193
