@@ -1,16 +1,17 @@
 <?php
 
 use App\Http\Controllers\FrontendJobController;
-use Illuminate\Support\Facades\Route;
-
-// Standard Laravel Auth-Routen (Login, Logout)
 use App\Http\Controllers\Auth\LoginController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-Auth::routes(['register' => false, 'reset' => false, 'verify' => false]);
+// Native Authentifizierungs-Routen ohne laravel/ui
+Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('login', [LoginController::class, 'login']);
+Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [FrontendJobController::class, 'index'])->name('dashboard');
