@@ -16,7 +16,7 @@ class ChecklistResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    public function form(Form $form): Form
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -31,7 +31,7 @@ class ChecklistResource extends Resource
             ]);
     }
 
-    public function table(Table $table): Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
@@ -51,12 +51,12 @@ class ChecklistResource extends Resource
             ]);
     }
 
-    public function getRelations(): array
+    public static function getRelations(): array
     {
         return [];
     }
 
-    public function getPages(): array
+    public static function getPages(): array
     {
         return [
             'index' => Pages\ListChecklists::route('/'),
