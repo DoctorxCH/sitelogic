@@ -7,7 +7,6 @@ export const renderJobDashboard = async (containerId) => {
 
     try {
         const jobs = await getFromDB('jobs');
-        const checklists = await getFromDB('checklists');
 
         if (jobs.length === 0) {
             container.innerHTML = '<p class="text-gray-500">No jobs available offline.</p>';
@@ -16,7 +15,8 @@ export const renderJobDashboard = async (containerId) => {
 
         // For simplicity, render the first available job
         const job = jobs[0];
-        const jobChecklists = checklists.filter(c => c.auftragskartei_id === job.id);
+        // Ensure checklists exist (from API nested relation)
+        const jobChecklists = job.checklists || [];
 
         const escapeHtml = (unsafe) => {
             if (!unsafe) return 'N/A';
@@ -41,7 +41,7 @@ export const renderJobDashboard = async (containerId) => {
             </div>
 
             <div class="mt-8">
-                <h3 class="text-xl font-bold mb-4">Checklists (QS1 / QS2)</h3>
+                <h3 class="text-xl font-bold mb-4">Checklisten</h3>
                 <div id="checklists-container" class="space-y-4"></div>
             </div>
         `;

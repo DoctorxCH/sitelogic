@@ -8,6 +8,7 @@ class ChecklistItem extends Model
 {
     protected $fillable = [
         'checklist_id',
+        'question',
         'kriterien_ausgeschaltet',
     ];
 
