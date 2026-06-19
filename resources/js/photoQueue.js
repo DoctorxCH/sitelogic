@@ -35,12 +35,16 @@ export const processPhotoQueue = async () => {
 
         for (const photo of queuedPhotos) {
             // Upload to backend API
+            // Add a proper auth token if Sanctum requires one
+            const tokenElement = document.querySelector('meta[name="csrf-token"]');
+            const token = tokenElement ? tokenElement.content : '';
+
             const response = await fetch('/api/photos/upload', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    // Assuming CSRF or Bearer token is handled elsewhere
+                    'X-CSRF-TOKEN': token
                 },
                 body: JSON.stringify(photo)
             });
