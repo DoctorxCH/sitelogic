@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ChecklistResource\Pages;
+use App\Filament\Resources\ChecklistResource\RelationManagers\ItemsRelationManager;
 use App\Models\Checklist;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,18 +17,22 @@ class ChecklistResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
+    protected static ?string $navigationLabel = 'Checklists';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('job_id')
                     ->relationship('job', 'title')
+                    ->label('Auftrag')
                     ->required(),
                 Forms\Components\TextInput::make('name')
+                    ->label('Name der Checkliste')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Toggle::make('is_completed')
-                    ->required(),
+                    ->label('Vollständig abgeschlossen'),
             ]);
     }
 
@@ -37,8 +42,8 @@ class ChecklistResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('job.title')->label('Auftrag')->searchable(),
                 Tables\Columns\TextColumn::make('name')->label('Checkliste'),
-                Tables\Columns\IconColumn::make('is_completed')->boolean(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime(),
+                Tables\Columns\IconColumn::make('is_completed')->label('Abgeschlossen')->boolean(),
+                Tables\Columns\TextColumn::make('created_at')->label('Erstellt am')->dateTime(),
             ])
             ->filters([])
             ->actions([
@@ -53,7 +58,9 @@ class ChecklistResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ItemsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
