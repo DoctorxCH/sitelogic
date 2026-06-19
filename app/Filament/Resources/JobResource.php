@@ -7,6 +7,7 @@ use App\Models\Job;
 use App\Models\JobFieldSetting;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -118,43 +119,85 @@ class JobResource extends Resource
                     ->action(function (array $data) {
                         $filePath = storage_path('app/' . $data['csv_file']);
                         
-                        if (!file_exists($filePath) || ($handle = fopen($filePath, 'r')) === false) {
+                        if (!file_exists($filePath)) {
+                            Notification::make()->danger()->title('Import Error')->body('File could not be stored.')->send();
                             return;
                         }
 
-                        $headers = fgetcsv($handle, 0, ',');
+                        $fileContent = file_get_contents($filePath);
+                        if (empty($fileContent)) {
+                            Notification::make()->danger()->title('Import Error')->body('File is empty.')->send();
+                            return;
+                        }
+
+                        // Automatische Trennzeichen-Erkennung (Komma oder Semikolon)
+                        $separator = ',';
+                        if (strpos($fileContent, ';') !== false && (strpos($fileContent, ',') === false || strpos($fileContent, ';') < strpos($fileContent, ','))) {
+                            $separator = ';';
+                        }
+
+                        if (($handle = fopen($filePath, 'r')) === false) {
+                            Notification::make()->danger()->title('Import Error')->body('Cannot open file.')->send();
+                            return;
+                        }
+
+                        $headers = fgetcsv($handle, 0, $separator);
                         if (!$headers) {
                             fclose($handle);
                             return;
                         }
 
-                        while (($row = fgetcsv($handle, 0, ',')) !== false) {
+                        // Bereinigung von unsichtbaren Zeichen / UTF-8 BOM
+                        $headers = array_map(fn($h) => trim($h, " \t\n\r\0\x0B\xEF\xBB\xBF"), $headers);
+
+                        $successCount = 0;
+                        $skippedCount = 0;
+
+                        while (($row = fgetcsv($handle, 0, $separator)) !== false) {
                             if (count($headers) !== count($row)) {
+                                $skippedCount++;
                                 continue;
                             }
 
                             $rowData = array_combine($headers, $row);
 
                             $jobData = [
-                                'title' => $rowData['title'] ?? 'Untitled Job',
-                                'status' => $rowData['status'] ?? 'pending',
-                                'type' => $rowData['type'] ?? 'ftth',
-                                'description' => $rowData['description'] ?? null,
+                                'title' => $rowData['title'] ?? ($rowData['Title'] ?? 'Untitled Job'),
+                                'status' => $rowData['status'] ?? ($rowData['Status'] ?? 'pending'),
+                                'type' => strtolower($rowData['type'] ?? ($rowData['Type'] ?? 'ftth')),
+                                'description' => $rowData['description'] ?? ($rowData['Description'] ?? null),
                                 'custom_fields' => [],
                             ];
 
                             foreach ($rowData as $key => $value) {
-                                if (str_starts_with($key, 'custom_fields.')) {
-                                    $customKey = substr($key, 14);
-                                    $jobData['custom_fields'][$customKey] = ($value === '-' || $value === '') ? null : $value;
+                                $cleanKey = str_replace('custom_fields.', '', $key);
+                                $cleanKey = trim($cleanKey, " \t\n\r\0\x0B\xEF\xBB\xBF");
+                                
+                                if (str_starts_with($key, 'custom_fields.') || JobFieldSetting::where('key', $cleanKey)->exists()) {
+                                    $jobData['custom_fields'][$cleanKey] = ($value === '-' || $value === '') ? null : $value;
                                 }
                             }
 
                             Job::create($jobData);
+                            $successCount++;
                         }
 
                         fclose($handle);
-                        unlink($filePath);
+                        @unlink($filePath);
+
+                        if ($successCount > 0) {
+                            Notification::make()
+                                ->success()
+                                ->title('Import completed')
+                                ->body("Successfully imported $successCount jobs. Skipped $skippedCount rows due to formatting mismatches.")
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->danger()
+                                ->title('Import failed')
+                                ->body("No jobs were imported. Checked structure with separator '$separator'.")
+                                ->send();
+                        }
                     }),
             ])
             ->actions([
