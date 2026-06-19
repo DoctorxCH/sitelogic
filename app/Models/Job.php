@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Job extends Model
 {
     protected $fillable = ['title', 'description', 'status', 'type', 'user_id', 'technician_id', 'started_at', 'completed_at', 'latitude', 'longitude'];
-    protected $casts = ['started_at' => 'datetime', 'completed_at' => 'datetime'];
+    protected $casts = ['started_at' => 'datetime', 'completed_at' => 'datetime', 'custom_fields' => 'array'];
 
     public function user(): BelongsTo
     {
