@@ -11,6 +11,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class JobResource extends Resource
 {
@@ -104,6 +105,30 @@ class JobResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('download_sample')
+                    ->label('Beispiel CSV herunterladen')
+                    ->color('gray')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function () {
+                        $headers = [
+                            'title', 'status', 'type', 'description',
+                            'custom_fields.pid', 'custom_fields.site_name', 'custom_fields.address',
+                            'custom_fields.business_area', 'custom_fields.region', 'custom_fields.project_type_code',
+                            'custom_fields.technology', 'custom_fields.an_code', 'custom_fields.site_identificator',
+                            'custom_fields.drop_cable_labels', 'custom_fields.bep_type', 'custom_fields.target_latitude',
+                            'custom_fields.target_longitude'
+                        ];
+
+                        $csvData = implode(',', $headers) . "\n";
+                        $csvData .= "FTTH Installation Ebikon,pending,ftth,Standard FTTH Abbruch,0100232117,71EBI_Ebikon_Ottigenbühlstr._8_Abbruch_A,\"Ottigenbühlstr. 8, 6030 Ebikon\",CX-WCO,C,ABB,CU,71EBI,-,-,-,47.081,8.341\n";
+
+                        return response()->streamDownload(function () use ($csvData) {
+                            echo $csvData;
+                        }, 'job-import-sample.csv', [
+                            'Content-Type' => 'text/csv',
+                        ]);
+                    }),
+
                 Tables\Actions\Action::make('direct_csv_import')
                     ->label('Direct CSV Import')
                     ->icon('heroicon-o-arrow-up-tray')
@@ -117,10 +142,11 @@ class JobResource extends Resource
                             ->visibility('private'),
                     ])
                     ->action(function (array $data) {
-                        $filePath = storage_path('app/' . $data['csv_file']);
+                        $fileKey = is_array($data['csv_file']) ? array_values($data['csv_file'])[0] : $data['csv_file'];
+                        $filePath = Storage::disk('local')->path($fileKey);
                         
                         if (!file_exists($filePath)) {
-                            Notification::make()->danger()->title('Import Error')->body('File could not be stored.')->send();
+                            Notification::make()->danger()->title('Import Error')->body('File could not be stored or found at: ' . $filePath)->send();
                             return;
                         }
 
@@ -130,7 +156,6 @@ class JobResource extends Resource
                             return;
                         }
 
-                        // Automatische Trennzeichen-Erkennung (Komma oder Semikolon)
                         $separator = ',';
                         if (strpos($fileContent, ';') !== false && (strpos($fileContent, ',') === false || strpos($fileContent, ';') < strpos($fileContent, ','))) {
                             $separator = ';';
@@ -147,7 +172,6 @@ class JobResource extends Resource
                             return;
                         }
 
-                        // Bereinigung von unsichtbaren Zeichen / UTF-8 BOM
                         $headers = array_map(fn($h) => trim($h, " \t\n\r\0\x0B\xEF\xBB\xBF"), $headers);
 
                         $successCount = 0;
@@ -183,13 +207,13 @@ class JobResource extends Resource
                         }
 
                         fclose($handle);
-                        @unlink($filePath);
+                        Storage::disk('local')->delete($fileKey);
 
                         if ($successCount > 0) {
                             Notification::make()
                                 ->success()
                                 ->title('Import completed')
-                                ->body("Successfully imported $successCount jobs. Skipped $skippedCount rows due to formatting mismatches.")
+                                ->body("Successfully imported $successCount jobs. Skipped $skippedCount rows.")
                                 ->send();
                         } else {
                             Notification::make()
