@@ -32,7 +32,17 @@ class JobResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('pid')->required(),
                 Forms\Components\TextInput::make('adresse')->required(),
-                Forms\Components\TextInput::make('projekt_typ')->required(),
+                Forms\Components\Select::make('project_type_id')
+                    ->relationship('projectType', 'name')
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $type = \App\Models\ProjectType::find($state);
+                        if ($type) {
+                            $set('projekt_typ', $type->name);
+                        }
+                    }),
+                Forms\Components\Hidden::make('projekt_typ'),
                 Forms\Components\TextInput::make('bauleiter')->required(),
                 Forms\Components\TextInput::make('technologie')->required(),
             ]);

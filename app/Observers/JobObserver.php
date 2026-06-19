@@ -14,30 +14,29 @@ class JobObserver
      */
     public function created(Job $job): void
     {
-        // Find the matching project type by name (case-insensitive ideally, but exact match for now)
-        $projectType = ProjectType::where('name', $job->projekt_typ)->first();
+        $projectTypeId = $job->project_type_id;
+        if (!$projectTypeId && $job->projekt_typ) {
+            $projectType = \App\Models\ProjectType::where('name', $job->projekt_typ)->first();
+            $projectTypeId = $projectType?->id;
+        }
 
-        if ($projectType) {
-            // Get templates attached to this project type
-            $templates = $projectType->checklistTemplates()->with('items')->get();
+        if (!$projectTypeId) return;
 
-            foreach ($templates as $template) {
-                // Create a concrete checklist for this job
-                $checklist = Checklist::create([
-                    'auftragskartei_id' => $job->id,
-                    'name' => $template->name,
-                    'status' => 'open',
-                    'hauptschalter' => true,
+        $templates = \App\Models\ChecklistTemplate::where('project_type_id', $projectTypeId)->get();
+
+        foreach ($templates as $template) {
+            $checklist = $job->checklists()->create([
+                'name' => $template->name,
+                'status' => 'open',
+                'hauptschalter' => true,
+            ]);
+
+            foreach ($template->items as $item) {
+                $checklist->items()->create([
+                    'question' => $item->question,
+                    'is_checked' => false,
+                    'kriterien_ausgeschaltet' => false,
                 ]);
-
-                // Create concrete checklist items based on template questions
-                foreach ($template->items as $templateItem) {
-                    ChecklistItem::create([
-                        'checklist_id' => $checklist->id,
-                        'question' => $templateItem->question,
-                        'kriterien_ausgeschaltet' => false,
-                    ]);
-                }
             }
         }
     }

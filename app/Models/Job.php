@@ -9,10 +9,16 @@ class Job extends Model
     protected $fillable = [
         'pid',
         'adresse',
+        'project_type_id',
         'projekt_typ',
         'bauleiter',
         'technologie',
     ];
+
+    public function projectType()
+    {
+        return $this->belongsTo(ProjectType::class);
+    }
 
     public function jobAssets()
     {

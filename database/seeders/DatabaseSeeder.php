@@ -42,8 +42,14 @@ class DatabaseSeeder extends Seeder
         $projectType = ProjectType::updateOrCreate(['name' => 'FTTH']);
 
         // 4. Templates anlegen
-        $inhouseTemplate = ChecklistTemplate::updateOrCreate(['name' => 'Inhouse']);
-        $manholeTemplate = ChecklistTemplate::updateOrCreate(['name' => 'Manhole']);
+        $inhouseTemplate = ChecklistTemplate::updateOrCreate([
+            'name' => 'Inhouse',
+            'project_type_id' => $projectType->id
+        ]);
+        $manholeTemplate = ChecklistTemplate::updateOrCreate([
+            'name' => 'Manhole',
+            'project_type_id' => $projectType->id
+        ]);
 
         // 5. Template Items für Inhouse
         $inhouseItems = [

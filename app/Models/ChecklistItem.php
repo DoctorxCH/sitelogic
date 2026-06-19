@@ -10,6 +10,7 @@ class ChecklistItem extends Model
         'checklist_id',
         'question',
         'kriterien_ausgeschaltet',
+        'is_checked',
     ];
 
     public function checklist()

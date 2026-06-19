@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectType extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'description'];
 
     public function checklistTemplates()
     {
-        return $this->belongsToMany(ChecklistTemplate::class, 'checklist_template_project_type');
+        return $this->hasMany(ChecklistTemplate::class);
     }
 }
