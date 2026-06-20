@@ -39,7 +39,7 @@ class JobDetailController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'BEP Typ erfolgreich aktualisiert',
+            'message' => __('main.bep_type_updated_successfully'),
             'type' => $validated['type'],
         ]);
     }

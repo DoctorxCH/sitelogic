@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Language;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TranslationResource extends Resource
@@ -50,11 +51,15 @@ class TranslationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                // Zeigt jeden Key nur einmal anhand der Standardsprache an
+                $defaultLocale = Language::where('is_default', true)->value('code') ?? 'en';
+                return $query->where('language_code', $defaultLocale);
+            })
             ->columns([
-                Tables\Columns\TextColumn::make('group')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('key')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('group')->searchable(),
+                Tables\Columns\TextColumn::make('key')->searchable(),
+                Tables\Columns\TextColumn::make('value')->label('Default Value')->limit(50),
             ])
             ->filters([
                 //

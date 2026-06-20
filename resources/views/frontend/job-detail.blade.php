@@ -6,7 +6,7 @@
     <div class="mb-8 flex items-center justify-between">
         <a href="{{ route('frontend.dashboard') }}" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            <span class="text-sm font-medium">Zurück</span>
+            <span class="text-sm font-medium">{{ __('main.back') }}</span>
         </a>
         @if($job->status === 'pending' && !$isManager)
             <form action="{{ route('frontend.job.status', $job) }}" method="POST">
@@ -65,9 +65,9 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pb-6 border-b border-gray-200">
             <div>
                 <div class="flex items-center gap-2 mb-1">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Typ</p>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">{{ __('main.type') }}</p>
                     @if(!$isManager && $job->status === 'in_progress')
-                        <button type="button" onclick="openBepTypeModal()" class="text-gray-400 hover:text-gray-600 transition p-1" title="BEP Typ ändern">
+                        <button type="button" onclick="openBepTypeModal()" class="text-gray-400 hover:text-gray-600 transition p-1" title="{{ __('main.change_bep_type') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
                     @endif
@@ -75,21 +75,21 @@
                 <p class="text-lg font-semibold text-gray-900">{{ $job->bepType?->name ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">Techniker</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">{{ __('main.technician') }}</p>
                 <p class="text-sm font-semibold text-gray-900">{{ $job->technician?->name ?? 'Nicht zugewiesen' }}</p>
                 @if($job->technician?->email)
                     <p class="text-xs text-gray-500">{{ $job->technician->email }}</p>
                 @endif
             </div>
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">Erstellt</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">{{ __('main.created') }}</p>
                 <p class="text-sm font-semibold text-gray-900">{{ $job->created_at?->format('d.m.Y') }}</p>
                 <p class="text-xs text-gray-500">{{ $job->created_at?->format('H:i') }}</p>
             </div>
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">Checklisten</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1 font-semibold">{{ __('main.checklists') }}</p>
                 <p class="text-lg font-semibold text-gray-900">{{ $job->checklists->count() }}</p>
-                <p class="text-xs text-gray-500">{{ $totalChecklistItems }} Punkte</p>
+                <p class="text-xs text-gray-500">{{ $totalChecklistItems }} {{ __('main.points') }}</p>
             </div>
         </div>
 
@@ -98,29 +98,29 @@
             <div class="space-y-4">
                 @if($job->description)
                     <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">Beschreibung</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">{{ __('main.description') }}</p>
                         <p class="text-gray-700 text-sm leading-relaxed">{{ $job->description }}</p>
                     </div>
                 @endif
 
                 @if(isset($job->custom_fields['target_latitude']) && isset($job->custom_fields['target_longitude']) && $job->custom_fields['target_latitude'] && $job->custom_fields['target_longitude'])
                     <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">Standort</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">{{ __('main.location') }}</p>
                         <div id="job_map" class="w-full h-64 rounded-lg border border-gray-200 shadow-sm bg-gray-50"></div>
                         <p class="text-xs text-gray-500 mt-2">📍 {{ $job->custom_fields['target_latitude'] }}, {{ $job->custom_fields['target_longitude'] }}</p>
                     </div>
                 @else
                     <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">Standort</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">{{ __('main.location') }}</p>
                         <div class="w-full h-64 rounded-lg border border-gray-200 bg-gray-100 flex items-center justify-center text-gray-500">
-                            <span>Keine Koordinaten verfügbar</span>
+                            <span>{{ __('main.no_coordinates_available') }}</span>
                         </div>
                     </div>
                 @endif
 
                 @if($customFields->isNotEmpty())
                     <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">Zusätzliche Details</p>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-2 font-semibold">{{ __('main.additional_details') }}</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach($customFields as $key => $value)
                                 <div class="flex items-start gap-2">
@@ -129,7 +129,7 @@
                                         @if(is_array($value))
                                             {{ implode(', ', array_filter($value, function ($item) { return !is_null($item) && $item !== ''; })) }}
                                         @elseif(is_bool($value))
-                                            {{ $value ? 'Ja' : 'Nein' }}
+                                            {{ $value ? {{ __('main.yes') }}' : '{{ __('main.no') }} }}
                                         @else
                                             {{ $value }}
                                         @endif
@@ -145,7 +145,7 @@
 
     <!-- Checklists Section -->
     <div class="space-y-4">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Checklisten</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">{{ __('main.checklists') }}</h2>
 
         @forelse($job->checklists as $checklist)
             <div x-data="{ open: false }" class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
@@ -165,9 +165,9 @@
                                     {{ ucfirst($checklist->status) }}
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600">{{ $checklist->items->count() }} Punkte</p>
+                            <p class="text-sm text-gray-600">{{ $checklist->items->count() }} {{ __('main.points') }}</p>
                             @if(in_array($checklist->status, ['approved', 'rejected']) && $checklist->reviewer)
-                                <p class="text-xs text-gray-500 mt-2">Überprüft von: <span class="font-semibold">{{ $checklist->reviewer->name }}</span></p>
+                                <p class="text-xs text-gray-500 mt-2">{{ __('main.reviewed_by') }}: <span class="font-semibold">{{ $checklist->reviewer->name }}</span></p>
                             @endif
                         </div>
                         <button type="button" class="text-gray-400 hover:text-gray-600 transition">
@@ -190,7 +190,7 @@
                                     <div class="flex items-start justify-between mb-3">
                                         <p class="font-semibold text-gray-900">{{ $item->task }}</p>
                                         @if($item->status === 'disabled')
-                                            <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Vom Techniker deaktiviert</span>
+                                            <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{{ __('main.disabled_by_technician') }}</span>
                                         @endif
                                     </div>
                                     
@@ -218,14 +218,14 @@
                                             <div class="flex flex-wrap gap-4">
                                                 <label class="flex items-center gap-2 cursor-pointer">
                                                     <input type="radio" name="items[{{ $item->id }}][status]" value="approved" x-model="decision" checked class="w-4 h-4">
-                                                    <span class="text-sm font-medium text-green-700">✓ Akzeptieren</span>
+                                                    <span class="text-sm font-medium text-green-700">✓ {{ __('main.accept') }}</span>
                                                 </label>
                                                 <label class="flex items-center gap-2 cursor-pointer">
                                                     <input type="radio" name="items[{{ $item->id }}][status]" value="rejected" x-model="decision" class="w-4 h-4">
-                                                    <span class="text-sm font-medium text-red-700">✗ Ablehnen</span>
+                                                    <span class="text-sm font-medium text-red-700">✗ {{ __('main.reject') }}</span>
                                                 </label>
                                             </div>
-                                            <input type="text" name="items[{{ $item->id }}][manager_comment]" :required="decision === 'rejected'" placeholder="Notiz hinzufügen..." class="w-full text-sm p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent" :class="decision === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-300'">
+                                            <input type="text" name="items[{{ $item->id }}][manager_comment]" :required="decision === 'rejected'" placeholder="{{ __('main.add_note') }}" class="w-full text-sm p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent" :class="decision === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-300'">
                                         </div>
                                     @else
                                         <input type="hidden" name="items[{{ $item->id }}][status]" value="approved">
@@ -241,10 +241,10 @@
                         <div class="space-y-3">
                             @if($checklist->status === 'pending' && $job->status === 'in_progress' && !$isManager)
                                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
-                                    <p class="text-sm text-gray-700">Keine Arbeiten notwendig?</p>
+                                    <p class="text-sm text-gray-700">{{ __('main.no_work_needed') }}</p>
                                     <form action="{{ route('frontend.checklist.disable', $checklist) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="px-4 py-2 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition">Deaktivieren</button>
+                                        <button type="submit" class="px-4 py-2 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition">{{ __('main.disable') }}</button>
                                     </form>
                                 </div>
                             @endif
@@ -259,7 +259,7 @@
                                             <div class="flex-1">
                                                 <p class="font-semibold text-gray-900 text-base">{{ $item->task }}</p>
                                                 @if($item->status === 'submitted' && $item->last_edited_by_email)
-                                                    <p class="text-xs text-gray-500 mt-1">✓ Eingereicht von: <span class="font-semibold">{{ $item->last_edited_by_email }}</span></p>
+                                                    <p class="text-xs text-gray-500 mt-1">✓ {{ __('main.submitted_by') }}: <span class="font-semibold">{{ $item->last_edited_by_email }}</span></p>
                                                 @endif
                                             </div>
                                             <span id="badge_{{ $item->id }}" class="text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ml-2
@@ -276,7 +276,7 @@
 
                                         @if($item->manager_comment && $canEditItem)
                                             <div id="manager_note_box_{{ $item->id }}" class="bg-red-50 border border-red-200 rounded p-3 mb-3 text-sm text-red-800">
-                                                <strong>⚠️ Überprüfer-Notiz:</strong> <span id="manager_comment_text_{{ $item->id }}">{{ $item->manager_comment }}</span>
+                                                <strong>⚠️ {{ __('main.reviewer_note') }}:</strong> <span id="manager_comment_text_{{ $item->id }}">{{ $item->manager_comment }}</span>
                                             </div>
                                         @endif
 
@@ -306,7 +306,7 @@
                                         @if($item->technician_comment || $canEditItem)
                                             <div class="mb-3">
                                                 @if($canEditItem)
-                                                    <input type="text" id="tech_comment_{{ $item->id }}" value="{{ $item->technician_comment }}" placeholder="Kommentar hinzufügen..." class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                    <input type="text" id="tech_comment_{{ $item->id }}" value="{{ $item->technician_comment }}" placeholder="{{ __('main.add_comment') }}" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 @elseif($item->technician_comment)
                                                     <p class="text-sm text-gray-700 bg-blue-50 border border-blue-100 rounded p-2">💬 {{ auth()->user()?->email ?? 'System' }}: {{ $item->technician_comment }}</p>
                                                 @endif
@@ -319,8 +319,8 @@
                                                 <label class="relative inline-flex items-center cursor-pointer bg-gray-100 rounded-full p-0.5 transition" style="width: 50px; height: 28px;">
                                                     <input type="checkbox" id="disable_toggle_{{ $item->id }}" onchange="toggleDisableItem({{ $item->id }})" class="sr-only peer" />
                                                     <div class="absolute left-0.5 top-0.5 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 shadow-sm"></div>
-                                                    <span class="peer-checked:opacity-0 opacity-100 transition absolute left-1.5 text-xs font-semibold text-gray-600">Off</span>
-                                                    <span class="peer-checked:opacity-100 opacity-0 transition absolute right-1.5 text-xs font-semibold text-blue-600">On</span>
+                                                    <span class="peer-checked:opacity-0 opacity-100 transition absolute left-1.5 text-xs font-semibold text-gray-600">{{ __('main.off') }}</span>
+                                                    <span class="peer-checked:opacity-100 opacity-0 transition absolute right-1.5 text-xs font-semibold text-blue-600">{{ __('main.on') }}</span>
                                                 </label>
                                             </div>
                                         @endif
@@ -332,13 +332,13 @@
                                 <div class="mt-6 space-y-3 pt-6 border-t-2 border-gray-200">
                                     <div class="flex gap-3">
                                         <button type="button" id="save_comments_btn_{{ $checklist->id }}" onclick="saveAllComments({{ $checklist->id }})" class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-sm text-sm">
-                                            💾 Kommentare speichern
+                                            💾 {{ __('main.save_comments') }}
                                         </button>
                                         <button type="button" onclick="submitChecklistWithConfirmation({{ $checklist->id }})" class="flex-1 px-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-sm text-sm">
-                                            ✓ Checkliste einreichen
+                                            ✓ {{ __('main.submit_checklist') }}
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 text-center">Speichern Sie zunächst alle Kommentare, bevor Sie die Checkliste einreichen.</p>
+                                    <p class="text-xs text-gray-500 text-center">{{ __('main.save_comments_before_submitting') }}</p>
                                 </div>
                                 <form action="{{ route('frontend.checklist.submit', $checklist) }}" method="POST" class="checklist-submit-form hidden" data-checklist-id="{{ $checklist->id }}">
                                     @csrf
@@ -346,7 +346,7 @@
                                 </form>
                             @elseif(in_array($checklist->status, ['approved', 'rejected', 'disabled']) && !$isManager)
                                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600 font-medium">
-                                    Checkliste ist geschlossen
+                                    {{ __('main.checklist_is_closed') }}
                                 </div>
                             @endif
                         </div>
@@ -355,7 +355,7 @@
             </div>
         @empty
             <div class="p-8 text-center bg-white rounded-lg border border-gray-200">
-                <p class="text-gray-600 font-medium">Keine Checklisten für diesen Job vorhanden</p>
+                <p class="text-gray-600 font-medium">{{ __('main.no_checklists_for_this_job') }}</p>
             </div>
         @endforelse
     </div>
@@ -366,7 +366,7 @@
 <div id="bep_type_modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" onclick="if(event.target.id === 'bep_type_modal') closeBepTypeModal()">
     <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-gray-900">BEP Typ wählen</h3>
+            <h3 class="text-xl font-bold text-gray-900">{{ __('main.choose_bep_type') }}</h3>
             <button type="button" onclick="closeBepTypeModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -382,7 +382,7 @@
     <button type="button" onclick="closePhotoLightbox()" class="absolute top-4 right-4 text-white hover:text-gray-300 transition p-2">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
     </button>
-    <img id="photo_lightbox_img" src="" alt="Vollansicht" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+    <img id="photo_lightbox_img" src="" alt="{{ __('main.full_view') }}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
 </div>
 
 <!-- Leaflet CSS & JS for Map -->
@@ -410,7 +410,7 @@ function openBepTypeModal() {
             </button>`
         ).join('');
     })
-    .catch(error => console.error('Fehler beim Laden der BEP Typen:', error));
+    .catch(error => console.error('{{ __('main.error_loading_bep_types') }}:', error));
 }
 
 function closeBepTypeModal() {
@@ -431,7 +431,7 @@ function selectBepType(type) {
     .then(response => response.json())
     .then(data => {
         if (!data.success) {
-            alert('Fehler beim Ändern des BEP Typs');
+            alert('{{ __('main.error_changing_bep_type') }}');
             return;
         }
         closeBepTypeModal();
@@ -452,7 +452,7 @@ function initJobMap() {
     console.log('Map coords from custom_fields:', lat, lng); // Debug
     
     if (isNaN(lat) || isNaN(lng)) {
-        console.warn('Keine validen Koordinaten vorhanden');
+        console.warn('{{ __('main.no_valid_coordinates') }}');
         return;
     }
 
@@ -466,7 +466,7 @@ function initJobMap() {
         L.marker([lat, lng]).addTo(map).bindPopup('<b>Einsatzort</b><br>' + lat + ', ' + lng);
         console.log('Map erfolgreich initialisiert');
     } catch (error) {
-        console.error('Fehler beim Initialisieren der Karte:', error);
+        console.error('{{ __('main.error_initializing_map') }}:', error);
     }
 }
 
@@ -486,7 +486,7 @@ function saveAllComments(checklistId) {
     const originalButtonText = saveButton ? saveButton.textContent : null;
     if (saveButton) {
         saveButton.disabled = true;
-        saveButton.textContent = 'Speichert...';
+        saveButton.textContent = '{{ __('main.saving') }}...';
     }
 
     try {
@@ -500,28 +500,28 @@ function saveAllComments(checklistId) {
         Promise.all(saveRequests).then(() => {
             if (saveButton) {
                 saveButton.disabled = false;
-                saveButton.textContent = originalButtonText || '💾 Kommentare speichern';
+                saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
             }
-            alert('✓ Alle Kommentare wurden gespeichert!');
+            alert('✓ {{ __('main.all_comments_saved') }}');
         }).catch(() => {
             if (saveButton) {
                 saveButton.disabled = false;
-                saveButton.textContent = originalButtonText || '💾 Kommentare speichern';
+                saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
             }
-            alert('Fehler beim Speichern der Kommentare');
+            alert('{{ __('main.error_saving_comments') }}');
         });
     } catch (error) {
         console.error(error);
         if (saveButton) {
             saveButton.disabled = false;
-            saveButton.textContent = originalButtonText || '💾 Kommentare speichern';
+            saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
         }
     }
 }
 
 // Submit checklist with confirmation
 function submitChecklistWithConfirmation(checklistId) {
-    const confirmed = confirm('⚠️ Wichtig!\n\nSie reichen die Checkliste jetzt ein.\n\n✓ Alle Angaben sind korrekt und vollständig\n✓ Diese Aktion kann nicht rückgängig gemacht werden\n\nMöchten Sie fortfahren?');
+    const confirmed = confirm('{{ __('main.submit_confirmation_text') }}');
     
     if (confirmed) {
         const form = document.querySelector('[data-checklist-id="' + checklistId + '"]');
@@ -581,7 +581,7 @@ function uploadItemData(itemId, shouldDisable, isAutoPhotoUpload = false) {
         formData.append('disable', '1');
     } else if (hasPhoto) {
         if ((existingPhotoCount + fileInput.files.length) > MAX_PHOTOS_PER_CHECKPOINT) {
-            alert('Maximum ' + MAX_PHOTOS_PER_CHECKPOINT + ' Fotos pro Punkt erlaubt.');
+            alert('{{ __('main.max_photos_allowed') }}'.replace(':max', MAX_PHOTOS_PER_CHECKPOINT));
             return;
         }
         for (let i = 0; i < fileInput.files.length; i++) {
@@ -680,13 +680,13 @@ function deleteItemPhoto(itemId, photoId, event) {
     .then(response => response.json())
     .then(data => {
         if (!data.success) {
-            alert(data.message || 'Foto konnte nicht gelöscht werden.');
+            alert(data.message || '{{ __('main.error_deleting_photo') }}');
             return;
         }
         const previewGallery = document.getElementById('preview_gallery_' + itemId);
         renderPreviewGallery(previewGallery, data.photos || []);
     })
-    .catch(() => alert('Foto konnte nicht gelöscht werden.'));
+    .catch(() => alert('{{ __('main.error_deleting_photo') }}'));
 }
 
 function onPhotoDragStart(event) {
@@ -745,12 +745,12 @@ function persistPhotoOrder(container) {
     .then(response => response.json())
     .then(data => {
         if (!data.success) {
-            alert(data.message || 'Fotos konnten nicht neu geordnet werden.');
+            alert(data.message || '{{ __('main.error_reordering_photos') }}');
             return;
         }
         renderPreviewGallery(container, data.photos || []);
     })
-    .catch(() => alert('Fotos konnten nicht neu geordnet werden.'));
+    .catch(() => alert('{{ __('main.error_reordering_photos') }}'));
 }
 
 function saveCommentOnly(itemId, comment) {
@@ -764,11 +764,11 @@ function saveCommentOnly(itemId, comment) {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(response => {
-        if (!response.ok) throw new Error('Kommentar konnte nicht gespeichert werden für Element ' + itemId);
+        if (!response.ok) throw new Error('{{ __('main.error_saving_comment_for_item') }} ' + itemId);
         return response.json();
     })
     .then(data => {
-        if (!data.success) throw new Error('Kommentar speichern war nicht erfolgreich für Element ' + itemId);
+        if (!data.success) throw new Error('{{ __('main.error_saving_comment_unsuccessful') }} ' + itemId);
         const badge = document.getElementById('badge_' + itemId);
         applyStatusBadge(badge, data.status);
         return data;
