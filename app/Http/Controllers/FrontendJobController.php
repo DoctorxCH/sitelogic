@@ -21,10 +21,41 @@ class FrontendJobController extends Controller
         $user = Auth::user();
         $isManager = $user->hasRole('manager') || $user->hasRole('super_admin');
 
-        $query = Job::query();
+        $myJobsQuery = Job::query();
+        $generalJobsQuery = Job::query();
+
         if ($isManager) {
-            // Managers should see all pending jobs and their own started jobs.
-            $query->where(function ($q) use ($user) {
+            // Managers see their own started jobs as "Meine Jobs" and all pending jobs as "Jobs Allgemein"
+            $myJobsQuery->where('user_id', $user->id)
+                        ->where('status', 'in_progress');
+            
+            $generalJobsQuery->where('status', 'pending');
+        } else {
+            // Technicians see their assigned jobs as "Meine Jobs" and unassigned pending jobs as "Jobs Allgemein"
+            $myJobsQuery->where('technician_id', $user->id)
+                        ->whereIn('status', ['pending', 'in_progress']);
+                        
+            $generalJobsQuery->whereNull('technician_id')
+                             ->where('status', 'pending');
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $searchClosure = function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('custom_fields', 'like', "%{$search}%");
+            };
+            $myJobsQuery->where($searchClosure);
+            $generalJobsQuery->where($searchClosure);
+        }
+
+        $myJobs = $myJobsQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'my_jobs_page');
+        $generalJobs = $generalJobsQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'general_jobs_page');
+
+        // Map data uses both
+        $allMapJobsQuery = Job::query();
+        if ($isManager) {
+            $allMapJobsQuery->where(function ($q) use ($user) {
                 $q->where('status', 'pending')
                     ->orWhere(function ($sq) use ($user) {
                         $sq->where('user_id', $user->id)
@@ -32,23 +63,14 @@ class FrontendJobController extends Controller
                     });
             });
         } else {
-            $query->where(function($q) use ($user) {
+            $allMapJobsQuery->where(function($q) use ($user) {
                 $q->whereNull('technician_id')->where('status', 'pending')
                   ->orWhere(function($sq) use ($user) {
                       $sq->where('technician_id', $user->id)->whereIn('status', ['pending', 'in_progress']);
                   });
             });
         }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('custom_fields', 'like', "%{$search}%");
-            });
-        }
-
-        $jobs = $query->orderBy('created_at', 'desc')->paginate(12, ['*'], 'jobs_page');
+        $allMapJobs = $allMapJobsQuery->get();
 
         $pendingReviews = [];
         if ($isManager) {
@@ -61,7 +83,7 @@ class FrontendJobController extends Controller
                 ->get();
         }
 
-        return view('frontend.dashboard', compact('jobs', 'pendingReviews', 'isManager'));
+        return view('frontend.dashboard', compact('myJobs', 'generalJobs', 'pendingReviews', 'isManager', 'allMapJobs'));
     }
 
     public function show(Job $job)
