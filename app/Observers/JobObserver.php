@@ -4,28 +4,30 @@ namespace App\Observers;
 
 use App\Models\Job;
 use App\Models\ChecklistTemplate;
-use App\Models\JobChecklist;
-use App\Models\JobChecklistItem;
 
 class JobObserver
 {
+    /**
+     * Wird automatisch gefeuert, NACHDEM ein Job in der Datenbank erstellt wurde.
+     */
     public function created(Job $job): void
     {
-        // Finde alle Vorlagen, die für den Typ des Jobs registriert sind
-        $templates = ChecklistTemplate::whereJsonContains('job_types', $job->type)->get();
+        // Sucht alle Templates, die den Typ des neuen Jobs (z.B. 'ftth') in ihrem Array haben
+        $templates = ChecklistTemplate::all()->filter(function ($template) use ($job) {
+            return is_array($template->job_types) && in_array($job->type, $template->job_types);
+        });
 
         foreach ($templates as $template) {
-            // Erstelle die Live-Checkliste für den Job
-            $jobChecklist = JobChecklist::create([
-                'job_id' => $job->id,
+            // 1. Erstelle die Haupt-Checkliste für den Job
+            $checklist = $job->checklists()->create([
                 'name' => $template->name,
             ]);
 
-            // Kopiere alle vordefinierten Punkte in den Job
-            foreach ($template->items as $itemTemplate) {
-                JobChecklistItem::create([
-                    'job_checklist_id' => $jobChecklist->id,
-                    'task' => $itemTemplate->task,
+            // 2. Kopiere alle Unteraufgaben aus dem Template in den Job
+            foreach ($template->items as $item) {
+                $checklist->items()->create([
+                    'task' => $item->task,
+                    'is_checked' => false,
                 ]);
             }
         }

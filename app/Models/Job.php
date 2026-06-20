@@ -2,27 +2,39 @@
 
 namespace App\Models;
 
+use App\Observers\JobObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([JobObserver::class])]
 class Job extends Model
 {
-    protected $fillable = ['title', 'description', 'status', 'type', 'user_id', 'technician_id', 'started_at', 'completed_at', 'latitude', 'longitude'];
-    protected $casts = ['started_at' => 'datetime', 'completed_at' => 'datetime', 'custom_fields' => 'array'];
+    // Hebt die Mass-Assignment-Blockade auf, damit der CSV-Import alle Felder speichern darf
+    protected $guarded = [];
 
-    public function user(): BelongsTo
+    protected $casts = [
+        'custom_fields' => 'array',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
+
+    public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
-    public function technician(): BelongsTo
+    public function technician()
     {
         return $this->belongsTo(User::class, 'technician_id');
     }
 
-    public function checklists(): HasMany
+    public function checklists()
     {
         return $this->hasMany(JobChecklist::class);
+    }
+
+    public function bepType()
+    {
+        return $this->belongsTo(BepType::class);
     }
 }

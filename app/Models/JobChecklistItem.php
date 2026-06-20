@@ -3,15 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class JobChecklistItem extends Model
 {
-    protected $table = 'job_checklist_items';
-    protected $fillable = ['job_checklist_id', 'task', 'is_checked', 'checked_at'];
+    protected $guarded = [];
 
-    public function checklist(): BelongsTo
+    private static ?bool $hasPhotoSortOrderColumn = null;
+
+    public function checklist()
     {
         return $this->belongsTo(JobChecklist::class, 'job_checklist_id');
+    }
+
+    public function photos()
+    {
+        $relation = $this->hasMany(JobChecklistItemPhoto::class, 'job_checklist_item_id');
+
+        if (self::hasPhotoSortOrderColumn()) {
+            return $relation->orderBy('sort_order')->orderBy('id');
+        }
+
+        return $relation->orderBy('id');
+    }
+
+    public static function hasPhotoSortOrderColumn(): bool
+    {
+        if (self::$hasPhotoSortOrderColumn === null) {
+            self::$hasPhotoSortOrderColumn = Schema::hasTable('job_checklist_item_photos')
+                && Schema::hasColumn('job_checklist_item_photos', 'sort_order');
+        }
+
+        return self::$hasPhotoSortOrderColumn;
     }
 }

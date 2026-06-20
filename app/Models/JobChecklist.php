@@ -3,21 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobChecklist extends Model
 {
-    protected $table = 'job_checklists';
-    protected $fillable = ['job_id', 'name', 'is_completed'];
+    protected $guarded = [];
+    protected $casts = [
+        'submitted_at' => 'datetime',
+        'edited_by_user_ids' => 'array',
+    ];
 
-    public function job(): BelongsTo
+    public function job()
     {
         return $this->belongsTo(Job::class);
     }
 
-    public function items(): HasMany
+    public function items()
     {
-        return $this->hasMany(JobChecklistItem::class, 'job_checklist_id');
+        return $this->hasMany(JobChecklistItem::class);
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewer_id');
     }
 }
