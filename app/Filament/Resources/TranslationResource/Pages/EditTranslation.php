@@ -23,6 +23,11 @@ class EditTranslation extends EditRecord
                         ->where('key', $record->key)
                         ->delete();
 
+                    $activeLanguages = \App\Models\Language::where('is_active', true)->pluck('code');
+                    foreach ($activeLanguages as $locale) {
+                        Translation::generateJsonFile($locale);
+                    }
+
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
         ];
@@ -37,8 +42,9 @@ class EditTranslation extends EditRecord
             ->where('key', $key)
             ->get();
 
+        $data['translations'] = [];
         foreach ($translations as $translation) {
-            $data["lang_{$translation->language_code}"] = $translation->value;
+            $data['translations'][$translation->language_code] = $translation->value;
         }
 
         return $data;
@@ -46,23 +52,17 @@ class EditTranslation extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $group = $data['group'];
-        $key = $record->key; // key is disabled, use existing
-
-        foreach ($data as $field => $value) {
-            if (str_starts_with($field, 'lang_')) {
-                $languageCode = str_replace('lang_', '', $field);
-
+        if (isset($data['translations']) && is_array($data['translations'])) {
+            foreach ($data['translations'] as $locale => $value) {
                 Translation::updateOrCreate(
-                    [
-                        'group' => $group,
-                        'key' => $key,
-                        'language_code' => $languageCode,
-                    ],
-                    [
-                        'value' => $value,
-                    ]
+                    ['group' => $record->group, 'key' => $record->key, 'language_code' => $locale],
+                    ['value' => $value]
                 );
+            }
+
+            // Generate files only after all DB updates are completed
+            foreach (array_keys($data['translations']) as $locale) {
+                Translation::generateJsonFile($locale);
             }
         }
 

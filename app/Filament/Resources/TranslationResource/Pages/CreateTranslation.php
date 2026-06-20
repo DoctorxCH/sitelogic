@@ -17,38 +17,22 @@ class CreateTranslation extends CreateRecord
     {
         $group = $data['group'] ?? 'main';
         $key = $data['key'];
+        $insertedRecord = null;
 
-        $firstModel = null;
+        if (isset($data['translations']) && is_array($data['translations'])) {
+            foreach ($data['translations'] as $locale => $value) {
+                $insertedRecord = Translation::updateOrCreate(
+                    ['group' => $group, 'key' => $key, 'language_code' => $locale],
+                    ['value' => $value]
+                );
+            }
 
-        // Iterate over dynamic lang fields
-        foreach ($data as $field => $value) {
-            if (str_starts_with($field, 'lang_')) {
-                $languageCode = str_replace('lang_', '', $field);
-
-                $translation = Translation::create([
-                    'group' => $group,
-                    'key' => $key,
-                    'language_code' => $languageCode,
-                    'value' => $value,
-                ]);
-
-                if (!$firstModel) {
-                    $firstModel = $translation;
-                }
+            // Generate files only after all DB entries are completed
+            foreach (array_keys($data['translations']) as $locale) {
+                Translation::generateJsonFile($locale);
             }
         }
 
-        // Return a model to satisfy the return type of handleRecordCreation
-        // If no languages exist, just create a dummy one or fail gracefully
-        if (!$firstModel) {
-            $firstModel = Translation::create([
-                'group' => $group,
-                'key' => $key,
-                'language_code' => 'en', // fallback
-                'value' => null,
-            ]);
-        }
-
-        return $firstModel;
+        return $insertedRecord ?? new Translation();
     }
 }

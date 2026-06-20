@@ -20,17 +20,6 @@ class Translation extends Model
         return $this->belongsTo(Language::class, 'language_code', 'code');
     }
 
-    protected static function booted()
-    {
-        static::saved(function ($translation) {
-            static::generateJsonFile($translation->language_code);
-        });
-
-        static::deleted(function ($translation) {
-            static::generateJsonFile($translation->language_code);
-        });
-    }
-
     public static function generateJsonFile($languageCode)
     {
         $translations = static::where('language_code', $languageCode)->get();

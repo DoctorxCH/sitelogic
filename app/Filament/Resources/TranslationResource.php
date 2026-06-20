@@ -36,7 +36,7 @@ class TranslationResource extends Resource
         try {
             $activeLanguages = \App\Models\Language::where('is_active', true)->get();
             foreach ($activeLanguages as $language) {
-                $schema[] = Forms\Components\Textarea::make("lang_{$language->code}")
+                $schema[] = Forms\Components\Textarea::make("translations.{$language->code}")
                     ->label("Translation ({$language->name})")
                     ->columnSpanFull();
             }
@@ -61,10 +61,23 @@ class TranslationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->after(function () {
+                        $activeLanguages = \App\Models\Language::where('is_active', true)->pluck('code');
+                        foreach ($activeLanguages as $locale) {
+                            Translation::generateJsonFile($locale);
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->after(function () {
+                            $activeLanguages = \App\Models\Language::where('is_active', true)->pluck('code');
+                            foreach ($activeLanguages as $locale) {
+                                Translation::generateJsonFile($locale);
+                            }
+                        }),
                 ]),
             ]);
     }
