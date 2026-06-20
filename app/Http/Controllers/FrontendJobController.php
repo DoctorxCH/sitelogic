@@ -128,37 +128,37 @@ class FrontendJobController extends Controller
             $job->completed_at = now();
         }
         $job->save();
-        return redirect()->back()->with('success', 'Job status updated.');
+        return redirect()->back()->with('success', __('main.job_status_updated'));
     }
 
     public function disableChecklist(JobChecklist $checklist)
     {
         if ($checklist->status !== 'pending') {
-            return redirect()->back()->with('error', 'This checklist is locked and cannot be changed anymore.');
+            return redirect()->back()->with('error', __('main.checklist_locked_cannot_change'));
         }
 
         $checklist->update(['status' => 'disabled']);
         $checklist->items()->update(['status' => 'disabled']);
         $this->trackChecklistEditor($checklist);
 
-        return redirect()->back()->with('success', 'Checklist disabled.');
+        return redirect()->back()->with('success', __('main.checklist_disabled'));
     }
 
     public function submitChecklist(JobChecklist $checklist)
     {
         if ($checklist->status !== 'pending') {
-            return redirect()->back()->with('error', 'This checklist is locked and cannot be submitted again.');
+            return redirect()->back()->with('error', __('main.checklist_locked_cannot_submit'));
         }
 
         $unresolvedCount = $checklist->items()->whereIn('status', ['pending', 'rejected'])->count();
         if ($unresolvedCount > 0) {
-            return redirect()->back()->with('error', 'All items must be filled or disabled before submitting.');
+            return redirect()->back()->with('error', __('main.all_items_must_be_filled'));
         }
 
         $checklist->update(['status' => 'submitted', 'submitted_at' => now()]);
         $this->trackChecklistEditor($checklist);
 
-        return redirect()->route('frontend.dashboard')->with('success', 'Checklist submitted for review.');
+        return redirect()->route('frontend.dashboard')->with('success', __('main.checklist_submitted_for_review'));
     }
 
     // AJAX OPERATIONS FOR TECHNICIAN
@@ -167,7 +167,7 @@ class FrontendJobController extends Controller
         if ($item->checklist->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'This checklist is locked and cannot be edited anymore.'
+                'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
 
@@ -223,7 +223,7 @@ class FrontendJobController extends Controller
         if (($existingPhotoCount + count($incomingPhotoFiles)) > self::MAX_PHOTOS_PER_ITEM) {
             return response()->json([
                 'success' => false,
-                'message' => 'Maximum ' . self::MAX_PHOTOS_PER_ITEM . ' photos per checkpoint allowed.'
+                'message' => __('main.max_photos_per_checkpoint', ['max' => self::MAX_PHOTOS_PER_ITEM])
             ], 422);
         }
 
@@ -277,7 +277,7 @@ class FrontendJobController extends Controller
         if ($item->checklist->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'This checklist is locked and cannot be edited anymore.'
+                'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
 
@@ -309,14 +309,14 @@ class FrontendJobController extends Controller
         if (!$this->hasPhotoSortOrderColumn()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Photo sorting is not available until database migration is applied.'
+                'message' => __('main.photo_sorting_unavailable')
             ], 409);
         }
 
         if ($item->checklist->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'This checklist is locked and cannot be edited anymore.'
+                'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
 
@@ -335,7 +335,7 @@ class FrontendJobController extends Controller
         if ($existingIds !== $sortedRequested) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid photo order payload.'
+                'message' => __('main.invalid_photo_order')
             ], 422);
         }
 
@@ -365,7 +365,7 @@ class FrontendJobController extends Controller
             abort(403);
         }
         if ($checklist->status !== 'submitted') {
-            return redirect()->back()->with('error', 'Only submitted checklists can be reviewed.');
+            return redirect()->back()->with('error', __('main.only_submitted_checklists_reviewed'));
         }
 
         $request->validate([
@@ -393,7 +393,7 @@ class FrontendJobController extends Controller
         $checklist->save();
         $this->trackChecklistEditor($checklist);
 
-        return redirect()->route('frontend.dashboard')->with('success', $allApproved ? 'Checklist completely approved and closed.' : 'Checklist rejected and closed.');
+        return redirect()->route('frontend.dashboard')->with('success', $allApproved ? __('main.checklist_approved_closed') : __('main.checklist_rejected_closed'));
     }
 
     private function trackChecklistEditor(JobChecklist $checklist): void

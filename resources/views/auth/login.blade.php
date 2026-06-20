@@ -10,12 +10,12 @@
     <div class="max-w-md w-full space-y-6 bg-white p-8 rounded-2xl shadow-md border border-gray-100">
         <div class="text-center">
             <h2 class="text-2xl font-bold text-gray-900">SiteLogic Mobile</h2>
-            <p class="text-sm text-gray-500 mt-1">Bitte loggen Sie sich ein, um Ihre Aufträge zu sehen.</p>
+            <p class="text-sm text-gray-500 mt-1">{{ __('main.please_login_to_see_jobs') }}</p>
         </div>
 
         @if($errors->any())
             <div class="bg-red-50 text-red-600 p-3 rounded-lg text-sm font-medium">
-                Die eingegebenen Zugangsdaten sind nicht korrekt.
+                {{ __('main.invalid_credentials') }}
             </div>
         @endif
 
@@ -28,16 +28,16 @@
         <form action="{{ route('login') }}" method="POST" class="space-y-4">
             @csrf
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-Mail-Adresse</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">{{ __('main.email_address') }}</label>
                 <input type="email" name="email" id="email" required autocomplete="email" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" value="{{ old('email') }}">
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">{{ __('main.password') }}</label>
                 <input type="password" name="password" id="password" required autocomplete="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900">
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-sm transition-colors mt-2">Einloggen</button>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-sm transition-colors mt-2">{{ __('main.login') }}</button>
         </form>
     </div>
 </body>
