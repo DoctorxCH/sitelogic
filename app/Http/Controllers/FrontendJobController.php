@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Job;
 use App\Models\JobChecklist;
 use App\Models\JobChecklistItem;
@@ -11,34 +9,50 @@ use App\Models\JobChecklistItemPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
 class FrontendJobController extends Controller
 {
     private const MAX_PHOTOS_PER_ITEM = 5;
-
     public function index(Request $request)
     {
         $user = Auth::user();
         $isManager = $user->hasRole('manager') || $user->hasRole('super_admin');
+        
+        $myStatusFilter = $request->query('my_status', 'all');
+        $generalStatusFilter = $request->query('general_status', 'all');
 
         $myJobsQuery = Job::query();
         $generalJobsQuery = Job::query();
-
         if ($isManager) {
-            // Managers see their own started jobs as "Meine Jobs" and all pending jobs as "Jobs Allgemein"
-            $myJobsQuery->where('user_id', $user->id)
-                        ->where('status', 'in_progress');
+           // Meine Aufträge: Jobs where this manager is assigned (user_id or technician_id)
+            $myJobsQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('technician_id', $user->id);
+            });
+            if ($myStatusFilter !== 'all') {
+                $myJobsQuery->where('status', $myStatusFilter);
+            }
             
-            $generalJobsQuery->where('status', 'pending');
+            // Allgemeine Aufträge: all jobs (managers see everything)
+            if ($generalStatusFilter !== 'all') {
+                $generalJobsQuery->where('status', $generalStatusFilter);
+            }
         } else {
             // Technicians see their assigned jobs as "Meine Jobs" and unassigned pending jobs as "Jobs Allgemein"
-            $myJobsQuery->where('technician_id', $user->id)
-                        ->whereIn('status', ['pending', 'in_progress']);
+            $myJobsQuery->where('technician_id', $user->id);
+            if ($myStatusFilter !== 'all') {
+                $myJobsQuery->where('status', $myStatusFilter);
+            } else {
+                $myJobsQuery->whereIn('status', ['pending', 'in_progress']);
+            }
                         
-            $generalJobsQuery->whereNull('technician_id')
-                             ->where('status', 'pending');
+            if ($generalStatusFilter !== 'all') {
+                $generalJobsQuery->whereNull('technician_id')
+                                 ->where('status', $generalStatusFilter);
+            } else {
+                $generalJobsQuery->whereNull('technician_id')
+                                 ->where('status', 'pending');
+            }
         }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $searchClosure = function($q) use ($search) {
@@ -48,30 +62,37 @@ class FrontendJobController extends Controller
             $myJobsQuery->where($searchClosure);
             $generalJobsQuery->where($searchClosure);
         }
-
         $myJobs = $myJobsQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'my_jobs_page');
         $generalJobs = $generalJobsQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'general_jobs_page');
-
         // Map data uses both
         $allMapJobsQuery = Job::query();
+        $completedSince = now()->subHours(24);
         if ($isManager) {
-            $allMapJobsQuery->where(function ($q) use ($user) {
+            $allMapJobsQuery->where(function ($q) use ($user, $completedSince) {
                 $q->where('status', 'pending')
                     ->orWhere(function ($sq) use ($user) {
                         $sq->where('user_id', $user->id)
                             ->where('status', 'in_progress');
+                    })
+                    ->orWhere(function ($sq) use ($completedSince) {
+                        $sq->where('status', 'completed')
+                            ->where('completed_at', '>=', $completedSince);
                     });
             });
         } else {
-            $allMapJobsQuery->where(function($q) use ($user) {
+            $allMapJobsQuery->where(function($q) use ($user, $completedSince) {
                 $q->whereNull('technician_id')->where('status', 'pending')
                   ->orWhere(function($sq) use ($user) {
                       $sq->where('technician_id', $user->id)->whereIn('status', ['pending', 'in_progress']);
+                  })
+                  ->orWhere(function($sq) use ($user, $completedSince) {
+                      $sq->where('technician_id', $user->id)
+                         ->where('status', 'completed')
+                         ->where('completed_at', '>=', $completedSince);
                   });
             });
         }
         $allMapJobs = $allMapJobsQuery->get();
-
         $pendingReviews = [];
         if ($isManager) {
             $pendingReviews = JobChecklist::where('status', 'submitted')
@@ -82,19 +103,15 @@ class FrontendJobController extends Controller
                 ->orderBy('submitted_at', 'asc')
                 ->get();
         }
-
-        return view('frontend.dashboard', compact('myJobs', 'generalJobs', 'pendingReviews', 'isManager', 'allMapJobs'));
+        return view('frontend.dashboard', compact('myJobs', 'generalJobs', 'pendingReviews', 'isManager', 'allMapJobs', 'myStatusFilter', 'generalStatusFilter'));
     }
-
     public function show(Job $job)
     {
         $user = Auth::user();
         $isManager = $user->hasRole('manager') || $user->hasRole('super_admin');
-
         if (!$isManager && $job->technician_id && $job->technician_id !== $user->id) {
             abort(403);
         }
-
         $job->load(['checklists.items.photos', 'checklists.reviewer:id,name,email', 'user:id,name,email', 'technician:id,name,email']);
         $fieldLabels = JobFieldSetting::query()->pluck('label', 'key');
         $editorIds = $job->checklists
@@ -103,7 +120,6 @@ class FrontendJobController extends Controller
                 if ($checklist->reviewer_id) {
                     $ids[] = $checklist->reviewer_id;
                 }
-
                 return $ids;
             })
             ->filter()
@@ -112,10 +128,8 @@ class FrontendJobController extends Controller
         $editorEmails = User::query()
             ->whereIn('id', $editorIds)
             ->pluck('email', 'id');
-
         return view('frontend.job-detail', compact('job', 'isManager', 'fieldLabels', 'editorEmails'));
     }
-
     public function updateStatus(Job $job, Request $request)
     {
         $request->validate(['status' => 'required|in:in_progress,completed']);
@@ -130,54 +144,71 @@ class FrontendJobController extends Controller
         $job->save();
         return redirect()->back()->with('success', __('main.job_status_updated'));
     }
-
     public function disableChecklist(JobChecklist $checklist)
     {
         if ($checklist->status !== 'pending') {
             return redirect()->back()->with('error', __('main.checklist_locked_cannot_change'));
         }
-
         $checklist->update(['status' => 'disabled']);
         $checklist->items()->update(['status' => 'disabled']);
         $this->trackChecklistEditor($checklist);
-
+        // Check if all checklists for this job are no longer pending or rejected
+        $job = $checklist->job;
+        $uncompletedChecklistsCount = $job->checklists()
+            ->whereIn('status', ['pending', 'rejected'])
+            ->count();
+        if ($uncompletedChecklistsCount === 0) {
+            $job->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+        }
         return redirect()->back()->with('success', __('main.checklist_disabled'));
     }
-
+    public function enableChecklist(JobChecklist $checklist)
+    {
+        if ($checklist->status !== 'disabled') {
+            return redirect()->back()->with('error', __('main.checklist_not_disabled'));
+        }
+        // Re-enable checklist and reset all its items to pending
+        $checklist->update(['status' => 'pending']);
+        $checklist->items()->update(['status' => 'pending']);
+        $this->trackChecklistEditor($checklist);
+        // If the job was auto-completed due to all checklists being disabled, revert it
+        $job = $checklist->job;
+        if ($job->status === 'completed') {
+            $job->update(['status' => 'in_progress', 'completed_at' => null]);
+        }
+        return redirect()->back()->with('success', __('main.checklist_enabled'));
+    }
     public function submitChecklist(JobChecklist $checklist)
     {
-        if ($checklist->status !== 'pending') {
+        if (!in_array($checklist->status, ['pending', 'rejected'])) {
             return redirect()->back()->with('error', __('main.checklist_locked_cannot_submit'));
         }
-
         $unresolvedCount = $checklist->items()->whereIn('status', ['pending', 'rejected'])->count();
         if ($unresolvedCount > 0) {
             return redirect()->back()->with('error', __('main.all_items_must_be_filled'));
         }
-
         $checklist->update(['status' => 'submitted', 'submitted_at' => now()]);
         $this->trackChecklistEditor($checklist);
-
         return redirect()->route('frontend.dashboard')->with('success', __('main.checklist_submitted_for_review'));
     }
-
     // AJAX OPERATIONS FOR TECHNICIAN
     public function saveItem(JobChecklistItem $item, Request $request)
     {
-        if ($item->checklist->status !== 'pending') {
+        if (!in_array($item->checklist->status, ['pending', 'rejected'])) {
             return response()->json([
                 'success' => false,
                 'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
-
         // Punkt deaktivieren via AJAX
         if ($request->has('disable')) {
             foreach ($item->photos as $photo) {
                 Storage::disk('public')->delete($photo->photo_path);
             }
             $item->photos()->delete();
-
             $item->update([
                 'status' => 'disabled', 
                 'photo_path' => null,
@@ -190,6 +221,10 @@ class FrontendJobController extends Controller
                 'comment' => $item->technician_comment
             ]);
         }
+        // Reactivate if it was previously disabled
+        if ($item->status === 'disabled') {
+            $item->status = 'pending';
+        }
 
         // Foto & Kommentar speichern via AJAX
         $request->validate([
@@ -198,7 +233,6 @@ class FrontendJobController extends Controller
             'photos.*' => 'image|max:10240',
             'technician_comment' => 'nullable|string'
         ]);
-
         if ($item->photos()->count() === 0 && $item->photo_path) {
             $legacyPhotoData = ['photo_path' => $item->photo_path];
             if ($this->hasPhotoSortOrderColumn()) {
@@ -206,7 +240,6 @@ class FrontendJobController extends Controller
             }
             $item->photos()->create($legacyPhotoData);
         }
-
         $incomingPhotoFiles = [];
         if ($request->hasFile('photos')) {
             $incomingPhotoFiles = array_merge($incomingPhotoFiles, $request->file('photos'));
@@ -214,23 +247,19 @@ class FrontendJobController extends Controller
         if ($request->hasFile('photo')) {
             $incomingPhotoFiles[] = $request->file('photo');
         }
-
         $existingPhotoCount = $item->photos()->count();
         if ($existingPhotoCount === 0 && $item->photo_path) {
             $existingPhotoCount = 1;
         }
-
         if (($existingPhotoCount + count($incomingPhotoFiles)) > self::MAX_PHOTOS_PER_ITEM) {
             return response()->json([
                 'success' => false,
                 'message' => __('main.max_photos_per_checkpoint', ['max' => self::MAX_PHOTOS_PER_ITEM])
             ], 422);
         }
-
         $uploadedPaths = [];
         $useSortOrder = $this->hasPhotoSortOrderColumn();
         $nextSortOrder = $useSortOrder ? ((int) $item->photos()->max('sort_order') + 1) : null;
-
         if (!empty($incomingPhotoFiles)) {
             foreach ($incomingPhotoFiles as $photoFile) {
                 $path = $photoFile->store('checklists/photos', 'public');
@@ -238,26 +267,27 @@ class FrontendJobController extends Controller
                 if ($useSortOrder) {
                     $photoData['sort_order'] = $nextSortOrder++;
                 }
-
                 $item->photos()->create($photoData);
                 $uploadedPaths[] = $path;
             }
         }
-
         if (!empty($uploadedPaths)) {
             // Keep first photo_path for backward compatibility with older UI/resource code.
             $item->photo_path = $uploadedPaths[0];
+        }
+        $item->technician_comment = $request->input('technician_comment');
+
+        // Update status: if has comment or photos, mark as submitted. Otherwise pending.
+        if ($item->photos()->count() > 0 || ($item->technician_comment !== null && trim($item->technician_comment) !== '')) {
             $item->status = 'submitted';
+        } else {
+            $item->status = 'pending';
         }
 
-        $item->technician_comment = $request->input('technician_comment');
         $item->save();
-
         $this->trackChecklistEditor($item->checklist);
-
         $photosPayload = $this->buildPhotosPayload($item);
         $photoUrls = collect($photosPayload)->pluck('url')->values();
-
         return response()->json([
             'success' => true,
             'status' => $item->status,
@@ -267,43 +297,35 @@ class FrontendJobController extends Controller
             'comment' => $item->technician_comment
         ]);
     }
-
     public function deleteItemPhoto(JobChecklistItem $item, JobChecklistItemPhoto $photo)
     {
         if ($photo->job_checklist_item_id !== $item->id) {
             abort(404);
         }
-
-        if ($item->checklist->status !== 'pending') {
+        if (!in_array($item->checklist->status, ['pending', 'rejected'])) {
             return response()->json([
                 'success' => false,
                 'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
-
         Storage::disk('public')->delete($photo->photo_path);
         $photo->delete();
-
         if ($this->hasPhotoSortOrderColumn()) {
             $remainingPhotos = $item->photos()->get();
             foreach ($remainingPhotos as $index => $remainingPhoto) {
                 $remainingPhoto->update(['sort_order' => $index + 1]);
             }
         }
-
         $firstPhotoPath = $item->photos()->value('photo_path');
         $item->update(['photo_path' => $firstPhotoPath]);
         $this->trackChecklistEditor($item->checklist);
-
         $photosPayload = $this->buildPhotosPayload($item);
-
         return response()->json([
             'success' => true,
             'photos' => $photosPayload,
             'photo_urls' => collect($photosPayload)->pluck('url')->values(),
         ]);
     }
-
     public function reorderItemPhotos(JobChecklistItem $item, Request $request)
     {
         if (!$this->hasPhotoSortOrderColumn()) {
@@ -312,74 +334,57 @@ class FrontendJobController extends Controller
                 'message' => __('main.photo_sorting_unavailable')
             ], 409);
         }
-
-        if ($item->checklist->status !== 'pending') {
+        if (!in_array($item->checklist->status, ['pending', 'rejected'])) {
             return response()->json([
                 'success' => false,
                 'message' => __('main.checklist_locked_cannot_edit')
             ], 423);
         }
-
         $data = $request->validate([
             'photo_ids' => 'required|array|min:1',
             'photo_ids.*' => 'required|integer',
         ]);
-
         $existingIds = $item->photos()->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
         $requestedIds = collect($data['photo_ids'])->map(fn ($id) => (int) $id)->values()->all();
-
         sort($existingIds);
         $sortedRequested = $requestedIds;
         sort($sortedRequested);
-
         if ($existingIds !== $sortedRequested) {
             return response()->json([
                 'success' => false,
                 'message' => __('main.invalid_photo_order')
             ], 422);
         }
-
         foreach ($requestedIds as $index => $photoId) {
             $item->photos()->whereKey($photoId)->update(['sort_order' => $index + 1]);
         }
-
         $firstPhotoPath = $item->photos()->value('photo_path');
         $item->update(['photo_path' => $firstPhotoPath]);
         $this->trackChecklistEditor($item->checklist);
-
         $photosPayload = $this->buildPhotosPayload($item);
-
         return response()->json([
             'success' => true,
             'photos' => $photosPayload,
             'photo_urls' => collect($photosPayload)->pluck('url')->values(),
         ]);
     }
-
     // SEAMLESS REVIEWS FOR MANAGERS
     public function reviewChecklist(JobChecklist $checklist, Request $request)
     {
         $user = Auth::user();
         if (!$user->hasRole('manager') && !$user->hasRole('super_admin')) abort(403);
-        if ($checklist->job->user_id !== $user->id && !$user->hasRole('super_admin')) {
-            abort(403);
-        }
         if ($checklist->status !== 'submitted') {
             return redirect()->back()->with('error', __('main.only_submitted_checklists_reviewed'));
         }
-
         $request->validate([
             'items' => 'required|array',
             'items.*.status' => 'required|in:approved,rejected',
             'items.*.manager_comment' => 'required_if:items.*.status,rejected|nullable|string',
         ]);
-
         $allApproved = true;
-
         foreach ($request->items as $itemId => $data) {
             $item = JobChecklistItem::findOrFail($itemId);
             if ($item->status === 'disabled') continue;
-
             $item->status = $data['status'];
             $item->manager_comment = $data['manager_comment'] ?? null;
             if ($data['status'] === 'rejected') {
@@ -387,34 +392,46 @@ class FrontendJobController extends Controller
             }
             $item->save();
         }
-
         $checklist->status = $allApproved ? 'approved' : 'rejected';
         $checklist->reviewer_id = $user->id;
         $checklist->save();
         $this->trackChecklistEditor($checklist);
-
+        $job = $checklist->job;
+        if (!$allApproved) {
+            // If any checklist is rejected, the job must go back to in_progress
+            if ($job->status === 'completed') {
+                $job->update(['status' => 'in_progress', 'completed_at' => null]);
+            }
+        } else {
+            // If approved, check if all checklists for this job are no longer pending or rejected
+            $uncompletedChecklistsCount = $job->checklists()
+                ->whereIn('status', ['pending', 'rejected'])
+                ->count();
+            if ($uncompletedChecklistsCount === 0) {
+                $job->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
+            }
+        }
         return redirect()->route('frontend.dashboard')->with('success', $allApproved ? __('main.checklist_approved_closed') : __('main.checklist_rejected_closed'));
     }
-
     private function trackChecklistEditor(JobChecklist $checklist): void
     {
         $userId = Auth::id();
         if (!$userId) {
             return;
         }
-
         $editedBy = $checklist->edited_by_user_ids ?? [];
         if (!in_array($userId, $editedBy, true)) {
             $editedBy[] = $userId;
             $checklist->update(['edited_by_user_ids' => array_values($editedBy)]);
         }
     }
-
     private function buildPhotosPayload(JobChecklistItem $item): array
     {
         $useSortOrder = $this->hasPhotoSortOrderColumn();
         $columns = $useSortOrder ? ['id', 'photo_path', 'sort_order'] : ['id', 'photo_path'];
-
         $photos = $item->photos()
             ->get($columns)
             ->map(function (JobChecklistItemPhoto $photo, int $index) use ($useSortOrder) {
@@ -426,7 +443,6 @@ class FrontendJobController extends Controller
             })
             ->values()
             ->all();
-
         if (empty($photos) && $item->photo_path) {
             return [[
                 'id' => null,
@@ -434,10 +450,8 @@ class FrontendJobController extends Controller
                 'sort_order' => 1,
             ]];
         }
-
         return $photos;
     }
-
     private function hasPhotoSortOrderColumn(): bool
     {
         return JobChecklistItem::hasPhotoSortOrderColumn();

@@ -7,18 +7,22 @@
     <h2 class="text-2xl font-bold text-gray-900 mb-4">{{ __('main.jobs_overview') }}</h2>
     <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
         <div id="jobs_map" class="w-full h-96 rounded-lg border border-gray-200 shadow-sm" style="min-height: 400px;"></div>
-        <div class="mt-4 grid grid-cols-3 gap-4 text-sm">
+        <div class="mt-4 grid grid-cols-4 gap-4 text-sm">
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full" style="background-color: #EAB308;"></div>
+                <div class="w-4 h-4 rounded-full" style="background-color: #3B82F6;"></div>
                 <span>{{ __('main.status_pending') }}</span>
             </div>
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full" style="background-color: #3B82F6;"></div>
+                <div class="w-4 h-4 rounded-full" style="background-color: #EAB308;"></div>
                 <span>{{ __('main.status_in_progress') }}</span>
             </div>
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 rounded-full" style="background-color: #EF4444;"></div>
                 <span>{{ __('main.status_rejected') }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded-full" style="background-color: #22C55E;"></div>
+                <span>{{ __('main.status_completed') }} (24h)</span>
             </div>
         </div>
     </div>
@@ -56,9 +60,42 @@
     <hr class="mb-10 border-gray-300">
 @endif
 
-<div class="px-4 sm:px-0 mb-6 mt-8">
-    <h1 class="text-2xl font-semibold text-gray-900">{{ __('main.my_jobs') }}</h1>
-    <p class="mt-1 text-sm text-gray-600">{{ __('main.jobs_assigned_to_you') }}</p>
+@php
+    $myTabFilters = [
+        'all'        => __('main.filter_all'),
+        'pending'    => __('main.status_pending'),
+        'in_progress'=> __('main.status_in_progress'),
+        'rejected'   => __('main.status_rejected'),
+        'completed'  => __('main.status_completed'),
+    ];
+    $myTabColors = [
+        'all'        => 'bg-gray-800 text-white',
+        'pending'    => 'bg-blue-600 text-white',
+        'in_progress'=> 'bg-yellow-500 text-white',
+        'rejected'   => 'bg-red-600 text-white',
+        'completed'  => 'bg-green-600 text-white',
+    ];
+    $myTabInactive = 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50';
+@endphp
+
+<div class="px-4 sm:px-0 mb-4 mt-8 flex items-center justify-between flex-wrap gap-3">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900">{{ __('main.my_jobs') }}</h1>
+        <p class="mt-1 text-sm text-gray-600">{{ __('main.jobs_assigned_to_you') }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        @foreach($myTabFilters as $value => $label)
+            @php
+                $isActive = $myStatusFilter === $value;
+                $params = array_merge(request()->query(), ['my_status' => $value === 'all' ? null : $value]);
+                $params = array_filter($params, fn($v) => !is_null($v) && $v !== '');
+            @endphp
+            <a href="{{ route('frontend.dashboard') }}?{{ http_build_query($params) }}"
+               class="px-3 py-1.5 rounded-full text-xs font-semibold transition {{ $isActive ? $myTabColors[$value] : $myTabInactive }}">
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
 </div>
 
 @if($myJobs->isEmpty())
@@ -72,9 +109,11 @@
                 <div class="px-4 py-5 sm:p-6 flex-grow">
                     <div class="flex items-center justify-between mb-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            @if($job->status === 'pending') bg-gray-100 text-gray-800 
-                            @elseif($job->status === 'in_progress') bg-yellow-100 text-yellow-800 
-                            @else bg-green-100 text-green-800 @endif">
+                            @if($job->status === 'pending') bg-blue-100 text-blue-800 
+                            @elseif($job->status === 'in_progress') bg-yellow-100 text-yellow-800
+                            @elseif($job->status === 'completed') bg-green-100 text-green-800
+                            @elseif($job->status === 'rejected') bg-red-100 text-red-800
+                            @else bg-gray-100 text-gray-800 @endif">
                             {{ ucfirst($job->status) }}
                         </span>
                         <span class="text-sm text-gray-500 font-medium uppercase">{{ $job->type }}</span>
@@ -96,9 +135,42 @@
     <div class="mt-6 mb-10">{{ $myJobs->links() }}</div>
 @endif
 
-<div class="px-4 sm:px-0 mb-6 mt-10">
-    <h1 class="text-2xl font-semibold text-gray-900">{{ __('main.general_jobs') }}</h1>
-    <p class="mt-1 text-sm text-gray-600">{{ __('main.available_unassigned_jobs') }}</p>
+@php
+    $generalTabFilters = [
+        'all'        => __('main.filter_all'),
+        'pending'    => __('main.status_pending'),
+        'in_progress'=> __('main.status_in_progress'),
+        'rejected'   => __('main.status_rejected'),
+        'completed'  => __('main.status_completed'),
+    ];
+    $generalTabColors = [
+        'all'        => 'bg-gray-800 text-white',
+        'pending'    => 'bg-blue-600 text-white',
+        'in_progress'=> 'bg-yellow-500 text-white',
+        'rejected'   => 'bg-red-600 text-white',
+        'completed'  => 'bg-green-600 text-white',
+    ];
+    $generalTabInactive = 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50';
+@endphp
+
+<div class="px-4 sm:px-0 mb-4 mt-10 flex items-center justify-between flex-wrap gap-3">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900">{{ __('main.general_jobs') }}</h1>
+        <p class="mt-1 text-sm text-gray-600">{{ __('main.available_unassigned_jobs') }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        @foreach($generalTabFilters as $value => $label)
+            @php
+                $isActive = $generalStatusFilter === $value;
+                $params = array_merge(request()->query(), ['general_status' => $value === 'all' ? null : $value]);
+                $params = array_filter($params, fn($v) => !is_null($v) && $v !== '');
+            @endphp
+            <a href="{{ route('frontend.dashboard') }}?{{ http_build_query($params) }}"
+               class="px-3 py-1.5 rounded-full text-xs font-semibold transition {{ $isActive ? $generalTabColors[$value] : $generalTabInactive }}">
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
 </div>
 
 @if($generalJobs->isEmpty())
@@ -112,9 +184,11 @@
                 <div class="px-4 py-5 sm:p-6 flex-grow">
                     <div class="flex items-center justify-between mb-4">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            @if($job->status === 'pending') bg-gray-100 text-gray-800 
-                            @elseif($job->status === 'in_progress') bg-yellow-100 text-yellow-800 
-                            @else bg-green-100 text-green-800 @endif">
+                            @if($job->status === 'pending') bg-blue-100 text-blue-800
+                            @elseif($job->status === 'in_progress') bg-yellow-100 text-yellow-800
+                            @elseif($job->status === 'completed') bg-green-100 text-green-800
+                            @elseif($job->status === 'rejected') bg-red-100 text-red-800
+                            @else bg-gray-100 text-gray-800 @endif">
                             {{ ucfirst($job->status) }}
                         </span>
                         <span class="text-sm text-gray-500 font-medium uppercase">{{ $job->type }}</span>
@@ -147,6 +221,7 @@ const jobsData = {!! json_encode($allMapJobs->map(function($job) {
         'id' => $job->id,
         'title' => $job->title,
         'status' => $job->status,
+        'completed_at' => $job->completed_at ? $job->completed_at->toISOString() : null,
         'custom_fields' => $job->custom_fields ?? [],
         'show_url' => route('frontend.job.show', $job)
     ];
@@ -155,11 +230,13 @@ const jobsData = {!! json_encode($allMapJobs->map(function($job) {
 function getMarkerColor(status) {
     switch(status) {
         case 'pending':
-            return '#EAB308'; // Yellow
-        case 'in_progress':
             return '#3B82F6'; // Blue
+        case 'in_progress':
+            return '#EAB308'; // Yellow
         case 'rejected':
             return '#EF4444'; // Red
+        case 'completed':
+            return '#22C55E'; // Green
         default:
             return '#6B7280'; // Gray
     }
@@ -171,11 +248,18 @@ function initJobsMap() {
         return;
     }
 
-    // Filter jobs with coordinates and status in ['pending', 'in_progress', 'rejected']
+    // Filter jobs with coordinates and a valid/recent status
+    const now = Date.now();
+    const msIn24h = 24 * 60 * 60 * 1000;
     const jobsWithCoords = jobsData.filter(job => {
         const hasCoords = job.custom_fields && job.custom_fields.target_latitude && job.custom_fields.target_longitude;
-        const validStatus = ['pending', 'in_progress', 'rejected'].includes(job.status);
-        return hasCoords && validStatus;
+        if (!hasCoords) return false;
+        if (job.status === 'completed') {
+            // Only show completed jobs from the last 24h
+            if (!job.completed_at) return false;
+            return (now - new Date(job.completed_at).getTime()) <= msIn24h;
+        }
+        return ['pending', 'in_progress', 'rejected'].includes(job.status);
     });
 
     if (jobsWithCoords.length === 0) {

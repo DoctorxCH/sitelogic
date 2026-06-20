@@ -66,7 +66,7 @@
             <div>
                 <div class="flex items-center gap-2 mb-1">
                     <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">{{ __('main.type') }}</p>
-                    @if(!$isManager && $job->status === 'in_progress')
+                    @if(($isManager || $job->status === 'in_progress') && !in_array($job->status, ['completed', 'rejected']))
                         <button type="button" onclick="openBepTypeModal()" class="text-gray-400 hover:text-gray-600 transition p-1" title="{{ __('main.change_bep_type') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
@@ -129,7 +129,7 @@
                                         @if(is_array($value))
                                             {{ implode(', ', array_filter($value, function ($item) { return !is_null($item) && $item !== ''; })) }}
                                         @elseif(is_bool($value))
-                                            {{ $value ? {{ __('main.yes') }}' : '{{ __('main.no') }} }}
+                                            {{ $value ? __('main.yes') : __('main.no') }}
                                         @else
                                             {{ $value }}
                                         @endif
@@ -239,7 +239,7 @@
                     @else
                         <!-- Technician/View Mode -->
                         <div class="space-y-3">
-                            @if($checklist->status === 'pending' && $job->status === 'in_progress' && !$isManager)
+                            @if($checklist->status === 'pending' && ($isManager || $job->status === 'in_progress'))
                                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
                                     <p class="text-sm text-gray-700">{{ __('main.no_work_needed') }}</p>
                                     <form action="{{ route('frontend.checklist.disable', $checklist) }}" method="POST">
@@ -247,14 +247,27 @@
                                         <button type="submit" class="px-4 py-2 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition">{{ __('main.disable') }}</button>
                                     </form>
                                 </div>
+                            @elseif($checklist->status === 'disabled' && ($isManager || $job->status === 'in_progress'))
+                                <div class="p-4 bg-orange-50 border border-orange-200 rounded-lg flex items-center justify-between">
+                                    <p class="text-sm text-orange-700 font-medium">⚠️ {{ __('main.checklist_is_disabled') }}</p>
+                                    <form action="{{ route('frontend.checklist.enable', $checklist) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded font-semibold hover:bg-orange-600 transition">{{ __('main.enable') }}</button>
+                                    </form>
+                                </div>
                             @endif
 
                             <div id="checklist_items_{{ $checklist->id }}" class="space-y-6">
                                 @foreach($checklist->items as $item)
                                     @php
-                                        $canEditItem = $checklist->status === 'pending' && in_array($item->status, ['pending', 'rejected']) && $job->status === 'in_progress' && !$isManager;
+                                        $isChecklistEditable = in_array($checklist->status, ['pending', 'rejected']) && ($isManager || $job->status === 'in_progress');
+                                        $canEditCommentAndPhotos = $isChecklistEditable && (
+                                            ($checklist->status === 'pending' && in_array($item->status, ['pending', 'rejected', 'submitted'])) ||
+                                            ($checklist->status === 'rejected' && in_array($item->status, ['pending', 'rejected']))
+                                        );
+                                        $canToggleItem = $isChecklistEditable && ($item->status !== 'approved');
                                     @endphp
-                                    <div id="item_card_{{ $item->id }}" class="p-5 rounded-lg border-2 {{ $item->status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white' }} transition shadow-sm hover:shadow-md">
+                                    <div id="item_card_{{ $item->id }}" class="p-5 rounded-lg border-2 {{ $item->status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white' }} {{ $item->status === 'disabled' ? 'opacity-60' : '' }} transition shadow-sm hover:shadow-md">
                                         <div class="flex items-start justify-between mb-3">
                                             <div class="flex-1">
                                                 <p class="font-semibold text-gray-900 text-base">{{ $item->task }}</p>
@@ -274,7 +287,7 @@
                                             </span>
                                         </div>
 
-                                        @if($item->manager_comment && $canEditItem)
+                                        @if($item->manager_comment && $canEditCommentAndPhotos)
                                             <div id="manager_note_box_{{ $item->id }}" class="bg-red-50 border border-red-200 rounded p-3 mb-3 text-sm text-red-800">
                                                 <strong>⚠️ {{ __('main.reviewer_note') }}:</strong> <span id="manager_comment_text_{{ $item->id }}">{{ $item->manager_comment }}</span>
                                             </div>
@@ -292,32 +305,32 @@
                                             }
                                         @endphp
                                         
-                                        <div id="preview_gallery_{{ $item->id }}" data-item-id="{{ $item->id }}" data-editable="{{ $canEditItem ? '1' : '0' }}" class="{{ $techPhotoEntries->isEmpty() ? 'hidden' : 'grid' }} grid-cols-3 gap-2 mb-3">
+                                        <div id="preview_gallery_{{ $item->id }}" data-item-id="{{ $item->id }}" data-editable="{{ $canEditCommentAndPhotos ? '1' : '0' }}" class="{{ $techPhotoEntries->isEmpty() ? 'hidden' : 'grid' }} grid-cols-3 gap-2 mb-3">
                                             @foreach($techPhotoEntries as $photo)
-                                                <div class="relative group photo-tile" data-photo-id="{{ $photo['id'] ?? '' }}" draggable="{{ $canEditItem && $photo['id'] ? 'true' : 'false' }}" ondragstart="onPhotoDragStart(event)" ondragover="onPhotoDragOver(event)" ondrop="onPhotoDrop(event)">
+                                                <div class="relative group photo-tile" data-photo-id="{{ $photo['id'] ?? '' }}" draggable="{{ $canEditCommentAndPhotos && $photo['id'] ? 'true' : 'false' }}" ondragstart="onPhotoDragStart(event)" ondragover="onPhotoDragOver(event)" ondrop="onPhotoDrop(event)">
                                                     <img src="{{ $photo['url'] }}" onclick="openPhotoLightbox('{{ $photo['url'] }}')" class="h-20 w-full object-cover rounded border cursor-zoom-in hover:opacity-80 transition">
-                                                    @if($canEditItem && $photo['id'])
+                                                    @if($canEditCommentAndPhotos && $photo['id'])
                                                         <button type="button" onclick="deleteItemPhoto({{ $item->id }}, {{ $photo['id'] }}, event)" class="absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shadow hover:bg-red-700 transition">&times;</button>
                                                     @endif
                                                 </div>
                                             @endforeach
                                         </div>
 
-                                        @if($item->technician_comment || $canEditItem)
+                                        @if($canToggleItem)
+                                            <div id="comment_container_{{ $item->id }}" class="mb-3 {{ $item->status === 'disabled' ? 'hidden' : '' }}">
+                                                <input type="text" id="tech_comment_{{ $item->id }}" value="{{ $item->technician_comment }}" placeholder="{{ __('main.add_comment') }}" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            </div>
+                                        @elseif($item->technician_comment)
                                             <div class="mb-3">
-                                                @if($canEditItem)
-                                                    <input type="text" id="tech_comment_{{ $item->id }}" value="{{ $item->technician_comment }}" placeholder="{{ __('main.add_comment') }}" class="w-full text-sm p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                                @elseif($item->technician_comment)
-                                                    <p class="text-sm text-gray-700 bg-blue-50 border border-blue-100 rounded p-2">💬 {{ auth()->user()?->email ?? 'System' }}: {{ $item->technician_comment }}</p>
-                                                @endif
+                                                <p class="text-sm text-gray-700 bg-blue-50 border border-blue-100 rounded p-2">💬 {{ auth()->user()?->email ?? 'System' }}: {{ $item->technician_comment }}</p>
                                             </div>
                                         @endif
 
-                                        @if($canEditItem)
+                                        @if($canToggleItem)
                                             <div class="flex gap-2 items-center pt-3 border-t border-gray-200">
-                                                <input type="file" id="file_input_{{ $item->id }}" accept="image/*" multiple onchange="uploadItemData({{ $item->id }}, false, true)" class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer flex-1">
+                                                <input type="file" id="file_input_{{ $item->id }}" accept="image/*" multiple onchange="uploadItemData({{ $item->id }}, false, true)" class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer flex-1 {{ $item->status === 'disabled' ? 'hidden' : '' }}">
                                                 <label class="relative inline-flex items-center cursor-pointer bg-gray-100 rounded-full p-0.5 transition" style="width: 50px; height: 28px;">
-                                                    <input type="checkbox" id="disable_toggle_{{ $item->id }}" onchange="toggleDisableItem({{ $item->id }})" class="sr-only peer" />
+                                                    <input type="checkbox" id="disable_toggle_{{ $item->id }}" onchange="toggleDisableItem({{ $item->id }})" class="sr-only peer" {{ $item->status === 'disabled' ? 'checked' : '' }} />
                                                     <div class="absolute left-0.5 top-0.5 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 shadow-sm"></div>
                                                     <span class="peer-checked:opacity-0 opacity-100 transition absolute left-1.5 text-xs font-semibold text-gray-600">{{ __('main.off') }}</span>
                                                     <span class="peer-checked:opacity-100 opacity-0 transition absolute right-1.5 text-xs font-semibold text-blue-600">{{ __('main.on') }}</span>
@@ -328,7 +341,7 @@
                                 @endforeach
                             </div>
 
-                            @if($checklist->status === 'pending' && !$isManager)
+                            @if(in_array($checklist->status, ['pending', 'rejected']))
                                 <div class="mt-6 space-y-3 pt-6 border-t-2 border-gray-200">
                                     <div class="flex gap-3">
                                         <button type="button" id="save_comments_btn_{{ $checklist->id }}" onclick="saveAllComments({{ $checklist->id }})" class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-sm text-sm">
@@ -344,7 +357,7 @@
                                     @csrf
                                     <button type="submit" style="display: none;"></button>
                                 </form>
-                            @elseif(in_array($checklist->status, ['approved', 'rejected', 'disabled']) && !$isManager)
+                            @elseif(in_array($checklist->status, ['approved', 'disabled']))
                                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600 font-medium">
                                     {{ __('main.checklist_is_closed') }}
                                 </div>
@@ -477,11 +490,22 @@ function toggleDisableItem(itemId) {
     uploadItemData(itemId, shouldDisable, false);
 }
 
-// Save all comments at once
-function saveAllComments(checklistId) {
+// Core: saves all comments for a checklist, returns a Promise
+function saveAllCommentsPromise(checklistId) {
     const checklistItemsBox = document.getElementById('checklist_items_' + checklistId);
-    if (!checklistItemsBox) return;
+    if (!checklistItemsBox) return Promise.resolve();
 
+    const commentInputs = checklistItemsBox.querySelectorAll('input[id^="tech_comment_"]');
+    const saveRequests = [];
+    commentInputs.forEach(function (input) {
+        const itemId = input.id.replace('tech_comment_', '');
+        saveRequests.push(saveCommentOnly(itemId, input.value));
+    });
+    return Promise.all(saveRequests);
+}
+
+// Save all comments button — saves and shows confirmation alert
+function saveAllComments(checklistId) {
     const saveButton = document.getElementById('save_comments_btn_' + checklistId);
     const originalButtonText = saveButton ? saveButton.textContent : null;
     if (saveButton) {
@@ -489,44 +513,36 @@ function saveAllComments(checklistId) {
         saveButton.textContent = '{{ __('main.saving') }}...';
     }
 
-    try {
-        const commentInputs = checklistItemsBox.querySelectorAll('input[id^="tech_comment_"]');
-        const saveRequests = [];
-        commentInputs.forEach(function (input) {
-            const itemId = input.id.replace('tech_comment_', '');
-            saveRequests.push(saveCommentOnly(itemId, input.value));
-        });
-        
-        Promise.all(saveRequests).then(() => {
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
-            }
-            alert('✓ {{ __('main.all_comments_saved') }}');
-        }).catch(() => {
-            if (saveButton) {
-                saveButton.disabled = false;
-                saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
-            }
-            alert('{{ __('main.error_saving_comments') }}');
-        });
-    } catch (error) {
-        console.error(error);
+    saveAllCommentsPromise(checklistId).then(() => {
         if (saveButton) {
             saveButton.disabled = false;
             saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
         }
-    }
+        alert('✓ {{ __('main.all_comments_saved') }}');
+    }).catch(() => {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText || '💾 {{ __('main.save_comments') }}';
+        }
+        alert('{{ __('main.error_saving_comments') }}');
+    });
 }
 
-// Submit checklist with confirmation
+// Submit checklist — first saves all comments silently, then submits
 function submitChecklistWithConfirmation(checklistId) {
     const confirmed = confirm('{{ __('main.submit_confirmation_text') }}');
-    
-    if (confirmed) {
-        const form = document.querySelector('[data-checklist-id="' + checklistId + '"]');
-        if (form) form.submit();
-    }
+    if (!confirmed) return;
+
+    const submitBtn = document.querySelector('[data-checklist-id="' + checklistId + '"] ~ button, [data-checklist-id="' + checklistId + '"]');
+    const form = document.querySelector('.checklist-submit-form[data-checklist-id="' + checklistId + '"]');
+    if (!form) return;
+
+    // Save comments first, then submit
+    saveAllCommentsPromise(checklistId)
+        .catch(() => { /* ignore comment save errors, proceed with submit */ })
+        .then(() => {
+            form.submit();
+        });
 }
 
 function openPhotoLightbox(src) {
@@ -605,15 +621,25 @@ function uploadItemData(itemId, shouldDisable, isAutoPhotoUpload = false) {
 
         applyStatusBadge(badge, data.status);
 
+        const commentContainer = document.getElementById('comment_container_' + itemId);
+        const fileInputEl = document.getElementById('file_input_' + itemId);
+
         if (data.status === 'submitted') {
             if (managerBox) managerBox.classList.add('hidden');
             card.className = "p-5 rounded-lg border-2 border-gray-200 bg-white transition shadow-sm hover:shadow-md";
         } else if (data.status === 'disabled') {
             if (managerBox) managerBox.classList.add('hidden');
             card.className = "p-5 rounded-lg border-2 border-gray-200 bg-white transition shadow-sm hover:shadow-md opacity-60";
+            if (commentContainer) commentContainer.classList.add('hidden');
+            if (fileInputEl) fileInputEl.classList.add('hidden');
             // Löschen von Kommentaren und Fotos beim Deaktivieren
             if (commentInput) commentInput.value = '';
             renderPreviewGallery(previewGallery, []);
+        } else {
+            if (managerBox) managerBox.classList.add('hidden');
+            card.className = "p-5 rounded-lg border-2 " + (data.status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white') + " transition shadow-sm hover:shadow-md";
+            if (commentContainer) commentContainer.classList.remove('hidden');
+            if (fileInputEl) fileInputEl.classList.remove('hidden');
         }
 
         if (Array.isArray(data.photos)) {

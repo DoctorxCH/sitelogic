@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bep-types', [JobDetailController::class, 'getBepTypes'])->name('bep-types.list');
     Route::post('/job/{job}/update-type', [JobDetailController::class, 'updateJobType'])->name('job.update-type');
     Route::post('/checklist/{checklist}/disable', [FrontendJobController::class, 'disableChecklist'])->name('frontend.checklist.disable');
+    Route::post('/checklist/{checklist}/enable', [FrontendJobController::class, 'enableChecklist'])->name('frontend.checklist.enable');
     Route::post('/checklist/{checklist}/submit', [FrontendJobController::class, 'submitChecklist'])->name('frontend.checklist.submit');
     Route::post('/checklist/{checklist}/review', [FrontendJobController::class, 'reviewChecklist'])->name('frontend.checklist.review');
     Route::post('/checklist-item/{item}/save', [FrontendJobController::class, 'saveItem'])->name('frontend.item.save');

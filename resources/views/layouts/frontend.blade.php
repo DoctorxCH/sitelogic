@@ -6,9 +6,14 @@
     <title>SiteLogic - Technician Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Fix for Leaflet map overlapping Tailwind dropdowns/modals */
+        .leaflet-container {
+            z-index: 10 !important;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans antialiased">
-
     <header class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
@@ -18,7 +23,6 @@
                         SiteLogic
                     </a>
                 </div>
-
                 <div class="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
                     <div class="max-w-lg w-full lg:max-w-xs">
                         <form action="{{ route('frontend.dashboard') }}" method="GET" class="relative">
@@ -31,7 +35,6 @@
                         </form>
                     </div>
                 </div>
-
                 <div class="ml-4 flex items-center md:ml-6">
                     <!-- Language Switcher Dropdown -->
                     @php
@@ -42,7 +45,6 @@
                             // ignore if table missing
                         }
                     @endphp
-
                     @if(count($activeLanguages) > 1)
                     <div x-data="{ open: false }" class="relative mr-4">
                         <button @click="open = !open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
@@ -54,7 +56,6 @@
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                         </button>
-
                         <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-32 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" style="display: none;">
                             @foreach($activeLanguages as $language)
                                 <a href="{{ route('lang.switch', $language->code) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ app()->getLocale() === $language->code ? 'bg-gray-100 font-bold' : '' }}">
@@ -64,7 +65,6 @@
                         </div>
                     </div>
                     @endif
-
                     <!-- User Menu Dropdown -->
                     <div x-data="{ open: false }" class="ml-3 relative">
                         <div>
@@ -79,14 +79,13 @@
                                 @endif
                             </button>
                         </div>
-
                         <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" style="display: none;">
                             <div class="px-4 py-2 text-sm text-gray-700 border-b">
                                 {{ __('main.signed_in_as') }}<br>
                                 <span class="font-medium truncate">{{ Auth::user()->name }}</span>
                             </div>
                             
-                            <a href="/admin/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">{{ __('main.settings') }}</a>
+                            <a href="{{ route('frontend.settings.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">{{ __('main.settings') }}</a>
                             
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
@@ -98,10 +97,8 @@
             </div>
         </div>
     </header>
-
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         @yield('content')
     </main>
-
 </body>
 </html>
