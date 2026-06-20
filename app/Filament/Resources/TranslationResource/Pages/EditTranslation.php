@@ -61,7 +61,8 @@ class EditTranslation extends EditRecord
             }
 
             // Generate files only after all DB updates are completed
-            foreach (array_keys($data['translations']) as $locale) {
+            $activeLanguages = \App\Models\Language::where('is_active', true)->pluck('code');
+            foreach ($activeLanguages as $locale) {
                 Translation::generateJsonFile($locale);
             }
         }
