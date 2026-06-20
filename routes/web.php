@@ -4,6 +4,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontendJobController;
 use App\Http\Controllers\Frontend\JobDetailController;
 use App\Http\Controllers\Auth\LoginController;
+use Illuminate\Support\Facades\Session;
+use App\Models\Language;
+
+Route::get('lang/{locale}', function ($locale) {
+    // Only allow setting active languages
+    $language = Language::where('code', $locale)->where('is_active', true)->first();
+    if ($language) {
+        Session::put('locale', $locale);
+    }
+    return redirect()->back();
+})->name('lang.switch');
 
 // Weiterleitung von der Root-URL zum Frontend-Dashboard (oder Login, falls nicht authentifiziert)
 Route::get('/', function () {
