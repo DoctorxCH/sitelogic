@@ -13,7 +13,7 @@
                 @csrf
                 <input type="hidden" name="status" value="in_progress">
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition shadow-sm">
-                    Job Starten
+                    {{ __('main.start_job') }}
                 </button>
             </form>
         @endif
@@ -233,7 +233,7 @@
                                 </div>
                             @endforeach
                             <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition shadow-sm mt-6">
-                                Überprüfung abschließen
+                                {{ __('main.complete_job') }}
                             </button>
                         </form>
                     @else

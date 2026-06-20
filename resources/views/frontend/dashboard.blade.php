@@ -31,7 +31,7 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            Pending Quality Reviews ({{ count($pendingReviews) }})
+            {{ __('main.pending_quality_reviews') }} ({{ count($pendingReviews) }})
         </h2>
         <div class="bg-white shadow overflow-hidden sm:rounded-md border border-red-200">
             <ul class="divide-y divide-gray-200">
@@ -57,7 +57,7 @@
 @endif
 
 <div class="px-4 sm:px-0 mb-6">
-    <h1 class="text-2xl font-semibold text-gray-900">Available Jobs</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">{{ __('main.available_jobs') }}</h1>
     <p class="mt-1 text-sm text-gray-600">Select a job to view details or manage operations.</p>
 </div>
 
@@ -87,7 +87,7 @@
                 </div>
                 <div class="bg-gray-50 px-4 py-3 border-t">
                     <a href="{{ route('frontend.job.show', $job) }}" class="w-full text-center block text-sm font-medium text-blue-600 hover:text-blue-800">
-                        Open Job &rarr;
+                        {{ __('main.open') }} &rarr;
                     </a>
                 </div>
             </div>
