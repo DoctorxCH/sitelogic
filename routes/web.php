@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontendJobController;
 use App\Http\Controllers\Frontend\JobDetailController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Frontend\UserSettingsController;
 use Illuminate\Support\Facades\Session;
 use App\Models\Language;
 
@@ -30,6 +31,10 @@ Route::middleware('auth')->post('/logout', [LoginController::class, 'logout'])->
 
 // Geschützte Frontend-Routen für Techniker
 Route::middleware(['auth'])->group(function () {
+    Route::get('/settings', [UserSettingsController::class, 'edit'])->name('frontend.settings.edit');
+    Route::put('/settings/password', [UserSettingsController::class, 'updatePassword'])->name('frontend.settings.password');
+    Route::post('/settings/photo', [UserSettingsController::class, 'updateProfilePhoto'])->name('frontend.settings.photo');
+
     Route::get('/dashboard', [FrontendJobController::class, 'index'])->name('frontend.dashboard');
     Route::get('/job/{job}', [FrontendJobController::class, 'show'])->name('frontend.job.show');
     Route::post('/job/{job}/status', [FrontendJobController::class, 'updateStatus'])->name('frontend.job.status');
